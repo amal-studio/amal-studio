@@ -41,11 +41,11 @@ if("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
 endif()
 
 # Set default global project variables
-set(OBS_COMPANY_NAME "OBS Project")
-set(OBS_PRODUCT_NAME "OBS Studio")
-set(OBS_WEBSITE "https://www.obsproject.com")
-set(OBS_COMMENTS "Free and open source software for video recording and live streaming")
-set(OBS_LEGAL_COPYRIGHT "(C) Lain Bailey")
+set(OBS_COMPANY_NAME "Amal Studio")
+set(OBS_PRODUCT_NAME "Amal Studio")
+set(OBS_WEBSITE "https://github.com/amal-studio/amal-studio")
+set(OBS_COMMENTS "Studio de diffusion en direct pour les createurs de contenus musulmans, base sur OBS Studio")
+set(OBS_LEGAL_COPYRIGHT "(C) Lain Bailey et contributeurs OBS Studio; (C) 2026 Amal Ben Aly")
 set(OBS_CMAKE_VERSION 3.0.0)
 
 # Configure default version strings

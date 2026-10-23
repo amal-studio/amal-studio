@@ -1,0 +1,120 @@
+@OBSThemeMeta {
+    name: 'Amal Emeraude';
+    id: 'studio.amal.Emeraude';
+    extends: 'com.obsproject.Yami';
+    author: 'Amal Studio';
+    dark: 'true';
+}
+
+/*
+ * Thème par défaut d'Amal Studio : mode sombre professionnel,
+ * fonds vert émeraude très foncé, accents émeraude, textes blancs, détails or.
+ */
+
+@OBSThemeVars {
+    /* Fonds : verts très sombres, lisibles pendant de longues sessions */
+    --grey1: #4C6A60;
+    --grey2: #3E5A51;
+    --grey3: #314C43;
+    --grey4: #263F37;
+    --grey5: #1E332C;
+    --grey6: #172823;
+    --grey7: #111F1B;
+    --grey8: #0B1512;
+
+    /* Émeraude */
+    --emerald1: #3FCB9A;
+    --emerald2: #1FAE7C;
+    --emerald3: #0E8C61;
+    --emerald4: #0B6B4F;
+    --emerald5: #08513C;
+
+    /* Or */
+    --gold1: #F0D27A;
+    --gold2: #D4AF37;
+    --gold3: #A8892A;
+
+    --bg_window: var(--grey7);
+    --bg_base: var(--grey6);
+    --bg_preview: var(--grey8);
+
+    --primary: var(--emerald4);
+    --primary_light: var(--emerald3);
+    --primary_lighter: var(--emerald2);
+    --primary_dark: var(--emerald5);
+    --primary_darker: var(--grey5);
+
+    --warning: var(--gold2);
+
+    --text: #FFFFFF;
+    --text_light: #FFFFFF;
+    --text_muted: #A9BDB5;
+
+    --highlight_color: var(--gold2);
+
+    --border_color: var(--grey4);
+
+    --input_bg: var(--grey5);
+    --input_bg_hover: var(--grey4);
+    --input_bg_focus: var(--grey7);
+
+    --input_border: var(--grey3);
+    --input_border_hover: var(--emerald3);
+    --input_border_focus: var(--gold2);
+
+    --list_item_bg_selected: var(--emerald4);
+    --list_item_bg_hover: var(--grey3);
+
+    --button_bg: var(--grey4);
+    --button_bg_hover: var(--grey3);
+    --button_bg_down: var(--emerald5);
+    --button_bg_disabled: var(--grey6);
+
+    --button_border: var(--grey4);
+    --button_border_hover: var(--emerald3);
+    --button_border_focus: var(--gold2);
+
+    --tab_border_focus: var(--gold2);
+    --tab_border_selected: var(--gold2);
+
+    --scrollbar_handle: var(--grey3);
+    --scrollbar_hover: var(--emerald4);
+    --scrollbar_down: var(--emerald3);
+
+    --palette_link: var(--gold1);
+    --palette_linkVisited: var(--gold2);
+}
+
+/* Titres des panneaux et groupes en or */
+QDockWidget::title {
+    background-color: var(--bg_base);
+    color: var(--gold1);
+}
+
+QGroupBox::title {
+    color: var(--gold1);
+}
+
+/* Onglet actif souligné d'or */
+QTabBar::tab:top:selected {
+    border-bottom: 2px solid var(--gold2);
+}
+
+/* Boutons « Démarrer le streaming / l'enregistrement » cochés : liseré or */
+QPushButton:checked,
+QPushButton.state-active {
+    border-color: var(--gold2);
+}
+
+/* Indicateurs de niveau audio aux couleurs du thème */
+VolumeMeter {
+    qproperty-backgroundNominalColor: #0B6B4F;
+    qproperty-backgroundWarningColor: #7A6420;
+    qproperty-backgroundErrorColor: #7D1224;
+    qproperty-foregroundNominalColor: #3FCB9A;
+    qproperty-foregroundWarningColor: #F0D27A;
+    qproperty-foregroundErrorColor: #E85E75;
+    qproperty-magnitudeColor: palette(window);
+    qproperty-majorTickColor: palette(window-text);
+    qproperty-minorTickColor: palette(mid);
+}

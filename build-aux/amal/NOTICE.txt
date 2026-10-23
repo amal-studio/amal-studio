@@ -1,0 +1,35 @@
+AMAL STUDIO
+===========
+
+Amal Studio est un studio de diffusion en direct et d'enregistrement destiné
+aux créateurs de contenus musulmans.
+
+Amal Studio est basé sur OBS Studio (https://obsproject.com), logiciel libre
+et open source créé par Lain Bailey et les contributeurs du projet OBS.
+Amal Studio n'est ni affilié au projet OBS, ni approuvé par lui.
+« OBS » et « OBS Studio » sont des marques du projet OBS.
+
+Licence
+-------
+Amal Studio est distribué sous les termes de la licence publique générale GNU,
+version 2 ou (à votre choix) toute version ultérieure. Le texte complet de la
+licence figure dans le fichier LICENCE-GPL.txt.
+
+Ce logiciel est fourni SANS AUCUNE GARANTIE, dans la mesure permise par la loi.
+
+Code source
+-----------
+Le code source complet et correspondant de chaque version d'Amal Studio est
+disponible à l'adresse : https://github.com/amal-studio/amal-studio
+
+Composants tiers principaux
+---------------------------
+- OBS Studio / libobs : GPL v2 ou ultérieure
+- Qt 6 : LGPL v3
+- FFmpeg : LGPL v2.1 ou ultérieure (avec composants GPL)
+- x264 : GPL v2 ou ultérieure
+- Chromium Embedded Framework (source navigateur) : licence BSD
+Un inventaire détaillé des licences sera fourni avec la version 1.0.
+
+Copyright (C) Lain Bailey et les contributeurs d'OBS Studio
+Copyright (C) 2026 Amal Ben Aly (modifications Amal Studio)

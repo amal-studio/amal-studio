@@ -1,0 +1,124 @@
+name: Amal Studio - Windows
+
+# Compile Amal Studio pour Windows 64 bits et produit l'installateur.
+# - À chaque envoi sur la branche amal/main : compilation + publication de la
+#   pré-version « amal-dev » (téléchargeable depuis l'onglet Releases).
+# - Lancement manuel possible depuis l'onglet Actions (« Run workflow »).
+
+on:
+  push:
+    branches:
+      - amal/main
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: amal-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AMAL_VERSION: 0.1.0
+
+jobs:
+  windows-x64:
+    name: Windows x64
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 180
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Récupérer les étiquettes de version OBS
+        run: git fetch origin --tags --force --no-recurse-submodules -q
+
+      - name: Compiler Amal Studio
+        run: .github/scripts/Build-Windows.ps1 -Target x64 -Configuration RelWithDebInfo
+
+      - name: Vérifier le résultat de la compilation
+        run: |
+          $Install = "${{ github.workspace }}/build_x64/install"
+          $Exe = Join-Path $Install 'bin/64bit/obs64.exe'
+          if ( ! ( Test-Path $Exe ) ) { throw "Exécutable introuvable : $Exe" }
+          foreach ( $Dir in @('data/obs-studio/locale', 'data/obs-studio/themes', 'obs-plugins/64bit') ) {
+            if ( ! ( Test-Path (Join-Path $Install $Dir) ) ) { throw "Dossier manquant : $Dir" }
+          }
+          if ( ! ( Test-Path (Join-Path $Install 'data/obs-studio/themes/Yami_Amal.ovt') ) ) { throw 'Thème Amal absent' }
+          $Info = (Get-Item $Exe).VersionInfo
+          Write-Output "ProductName : $($Info.ProductName)"
+          Write-Output "FileDescription : $($Info.FileDescription)"
+          if ( $Info.ProductName -ne 'Amal Studio' ) { throw "Nom de produit inattendu : $($Info.ProductName)" }
+          # Désactivation définitive du programme de mise à jour d'OBS dans l'installation
+          New-Item -ItemType File -Force -Path (Join-Path $Install 'bin/64bit/disable_updater') | Out-Null
+
+      - name: Copier les licences
+        run: |
+          $Install = "${{ github.workspace }}/build_x64/install"
+          Copy-Item COPYING (Join-Path $Install 'LICENCE-GPL.txt')
+          Copy-Item build-aux/amal/NOTICE.txt (Join-Path $Install 'NOTICE.txt')
+
+      - name: Préparer NSIS et les bibliothèques Visual C++
+        run: |
+          choco install nsis -y --no-progress
+          Invoke-WebRequest -Uri 'https://aka.ms/vc14/vc_redist.x64.exe' -OutFile "${{ runner.temp }}/vc_redist.x64.exe"
+
+      - name: Construire l'installateur
+        run: |
+          $Out = "${{ github.workspace }}/Amal-Studio-${{ env.AMAL_VERSION }}-Installer-x64.exe"
+          $Makensis = 'C:\Program Files (x86)\NSIS\makensis.exe'
+          & $Makensis /V2 `
+            "/DAPP_VERSION=${{ env.AMAL_VERSION }}" `
+            "/DSOURCE_DIR=${{ github.workspace }}\build_x64\install" `
+            "/DVCREDIST=${{ runner.temp }}\vc_redist.x64.exe" `
+            "/DOUTFILE=$Out" `
+            build-aux/amal/installer/amal-studio.nsi
+          if ( $LASTEXITCODE -ne 0 ) { throw "makensis a échoué ($LASTEXITCODE)" }
+          if ( ! ( Test-Path $Out ) ) { throw 'Installateur non produit' }
+          Get-Item $Out | Format-List Name, Length
+
+      - name: Construire la version portable (zip)
+        run: |
+          Compress-Archive -Path "${{ github.workspace }}/build_x64/install/*" `
+            -DestinationPath "${{ github.workspace }}/Amal-Studio-${{ env.AMAL_VERSION }}-Portable-x64.zip"
+
+      - name: Conserver les fichiers produits
+        uses: actions/upload-artifact@v4
+        with:
+          name: amal-studio-windows-x64-${{ github.sha }}
+          path: |
+            ${{ github.workspace }}/Amal-Studio-*-Installer-x64.exe
+            ${{ github.workspace }}/Amal-Studio-*-Portable-x64.zip
+
+      - name: Publier la pré-version amal-dev
+        if: github.ref == 'refs/heads/amal/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $Notes = @"
+          Version de développement d'Amal Studio ${{ env.AMAL_VERSION }}, compilée automatiquement.
+          Commit : ${{ github.sha }}
+
+          - **Installateur** : Amal-Studio-${{ env.AMAL_VERSION }}-Installer-x64.exe
+          - **Version portable** : Amal-Studio-${{ env.AMAL_VERSION }}-Portable-x64.zip
+
+          Amal Studio est basé sur OBS Studio et distribué sous licence GNU GPL v2 ou ultérieure.
+          Le code source correspondant est celui de ce commit.
+          "@
+          gh release delete amal-dev --cleanup-tag --yes 2>$null
+          $global:LASTEXITCODE = 0
+          gh release create amal-dev `
+            "Amal-Studio-${{ env.AMAL_VERSION }}-Installer-x64.exe" `
+            "Amal-Studio-${{ env.AMAL_VERSION }}-Portable-x64.zip" `
+            --target "${{ github.sha }}" `
+            --prerelease `
+            --title "Amal Studio ${{ env.AMAL_VERSION }} (développement)" `
+            --notes "$Notes"
