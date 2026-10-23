@@ -10,7 +10,7 @@ RequestExecutionLevel admin
 ManifestDPIAware true
 
 !ifndef APP_VERSION
-  !define APP_VERSION "0.1.0"
+  !define APP_VERSION "0.2.0"
 !endif
 !ifndef SOURCE_DIR
   !error "SOURCE_DIR doit pointer vers le dossier install produit par la compilation"
@@ -86,6 +86,10 @@ Section "Amal Studio" SecMain
   CreateShortcut "$SMPROGRAMS\Amal Studio\Désinstaller Amal Studio.lnk" "$INSTDIR\uninstall.exe"
   CreateShortcut "$DESKTOP\Amal Studio.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\${APP_EXE}" 0
 
+  ; Carte graphique hautes performances (NVIDIA/AMD dédiée) pour Amal Studio,
+  ; équivalent du réglage Windows Paramètres > Écran > Graphiques.
+  WriteRegStr HKCU "Software\Microsoft\DirectX\UserGpuPreferences" "$INSTDIR\${APP_EXE}" "GpuPreference=2;"
+
   WriteUninstaller "$INSTDIR\uninstall.exe"
   WriteRegStr HKLM "Software\Amal Studio" "InstallDir" "$INSTDIR"
   WriteRegStr HKLM "${UNINSTALL_KEY}" "DisplayName" "Amal Studio"
@@ -109,6 +113,7 @@ Section "Uninstall"
   RMDir /r "$INSTDIR\obs-plugins"
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR"
+  DeleteRegValue HKCU "Software\Microsoft\DirectX\UserGpuPreferences" "$INSTDIR\${APP_EXE}"
   DeleteRegKey HKLM "${UNINSTALL_KEY}"
   DeleteRegKey HKLM "Software\Amal Studio"
 SectionEnd

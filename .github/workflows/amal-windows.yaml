@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  AMAL_VERSION: 0.1.0
+  AMAL_VERSION: 0.2.0
 
 jobs:
   windows-x64:
@@ -53,6 +53,8 @@ jobs:
             if ( ! ( Test-Path (Join-Path $Install $Dir) ) ) { throw "Dossier manquant : $Dir" }
           }
           if ( ! ( Test-Path (Join-Path $Install 'data/obs-studio/themes/Yami_Amal.ovt') ) ) { throw 'Thème Amal absent' }
+          if ( ! ( Test-Path (Join-Path $Install 'obs-plugins/64bit/amal-projets.dll') ) ) { throw 'Module Projets absent' }
+          if ( ! ( Test-Path (Join-Path $Install 'data/obs-plugins/amal-projets/locale/fr-FR.ini') ) ) { throw 'Textes du module Projets absents' }
           $Info = (Get-Item $Exe).VersionInfo
           Write-Output "ProductName : $($Info.ProductName)"
           Write-Output "FileDescription : $($Info.FileDescription)"
