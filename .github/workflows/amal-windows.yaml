@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  AMAL_VERSION: 0.2.0
+  AMAL_VERSION: 0.3.0
 
 jobs:
   windows-x64:
@@ -55,6 +55,11 @@ jobs:
           if ( ! ( Test-Path (Join-Path $Install 'data/obs-studio/themes/Yami_Amal.ovt') ) ) { throw 'Thème Amal absent' }
           if ( ! ( Test-Path (Join-Path $Install 'obs-plugins/64bit/amal-projets.dll') ) ) { throw 'Module Projets absent' }
           if ( ! ( Test-Path (Join-Path $Install 'data/obs-plugins/amal-projets/locale/fr-FR.ini') ) ) { throw 'Textes du module Projets absents' }
+          foreach ( $File in @('obs-plugins/64bit/amal-graphiques.dll',
+                               'data/obs-plugins/amal-graphiques/overlay/overlay.html', 'data/obs-plugins/amal-graphiques/overlay/overlay.js',
+                               'data/obs-plugins/amal-graphiques/fonts/AmiriQuran.ttf', 'data/obs-plugins/amal-graphiques/locale/fr-FR.ini') ) {
+            if ( ! ( Test-Path (Join-Path $Install $File) ) ) { throw "Fichier du module Graphiques manquant : $File" }
+          }
           $Info = (Get-Item $Exe).VersionInfo
           Write-Output "ProductName : $($Info.ProductName)"
           Write-Output "FileDescription : $($Info.FileDescription)"

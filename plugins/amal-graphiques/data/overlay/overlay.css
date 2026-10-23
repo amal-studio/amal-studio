@@ -1,0 +1,255 @@
+/* Amal Studio - habillages graphiques (émeraude, blanc et or) */
+
+@font-face {
+	font-family: 'Amiri Quran';
+	src: url('../fonts/AmiriQuran.ttf') format('truetype');
+}
+@font-face {
+	font-family: 'Amiri';
+	src: url('../fonts/Amiri-Regular.ttf') format('truetype');
+	font-weight: 400;
+}
+@font-face {
+	font-family: 'Amiri';
+	src: url('../fonts/Amiri-Bold.ttf') format('truetype');
+	font-weight: 700;
+}
+
+:root {
+	--primary: #0B6B4F;
+	--accent: #D4AF37;
+	--ink: #FFFFFF;
+	--scale: 1;
+	--latin: 'Segoe UI', 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+	--arabic: 'Amiri', 'Traditional Arabic', serif;
+	--quran: 'Amiri Quran', 'Amiri', serif;
+	/* Motif géométrique : étoile à huit branches (khatam) */
+	--pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='1.2' opacity='0.55'%3E%3Crect x='20' y='20' width='24' height='24'/%3E%3Crect x='20' y='20' width='24' height='24' transform='rotate(45 32 32)'/%3E%3Ccircle cx='32' cy='32' r='5'/%3E%3Cpath d='M0 0L12 12M64 0L52 12M0 64L12 52M64 64L52 52'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+html, body {
+	margin: 0;
+	padding: 0;
+	width: 1920px;
+	height: 1080px;
+	overflow: hidden;
+	background: transparent;
+	color: var(--ink);
+	font-family: var(--latin);
+	-webkit-font-smoothing: antialiased;
+}
+
+#stage {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	justify-content: center;
+}
+
+/* Emplacement vertical du panneau */
+#stage.pos-bas { align-items: flex-end; }
+#stage.pos-haut { align-items: flex-start; }
+#stage.pos-centre { align-items: center; }
+
+.card {
+	position: relative;
+	box-sizing: border-box;
+	margin: 64px 96px;
+	transform-origin: center bottom;
+	scale: var(--scale);
+}
+
+/* ------------------------------------------------------------------ */
+/* Panneau texte (verset, hadith, invocation, rappel)                  */
+
+.panel {
+	width: 1600px;
+	padding: 40px 72px 34px;
+	background:
+		linear-gradient(180deg, color-mix(in srgb, var(--primary) 92%, black) 0%, color-mix(in srgb, var(--primary) 70%, black) 100%);
+	border-top: 4px solid var(--accent);
+	border-bottom: 4px solid var(--accent);
+	border-radius: 18px;
+	box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+	text-align: center;
+	overflow: hidden;
+}
+.panel::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image: var(--pattern);
+	opacity: 0.18;
+	pointer-events: none;
+}
+.panel > * { position: relative; }
+
+.label {
+	display: inline-block;
+	margin-bottom: 18px;
+	padding: 6px 22px;
+	border: 2px solid var(--accent);
+	border-radius: 999px;
+	color: var(--accent);
+	font-size: 24px;
+	font-weight: 600;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+}
+
+.arabic {
+	direction: rtl;
+	unicode-bidi: isolate;
+	font-family: var(--arabic);
+	font-size: 62px;
+	line-height: 1.75;
+	margin: 0 0 26px;
+	padding-bottom: 6px;
+}
+.arabic.quran { font-family: var(--quran); font-size: 70px; line-height: 2; }
+
+.translation {
+	font-size: 34px;
+	line-height: 1.45;
+	margin: 6px 0 0;
+	font-style: italic;
+}
+.translation.main { font-style: normal; font-size: 38px; }
+
+.divider {
+	width: 220px;
+	height: 2px;
+	margin: 22px auto 16px;
+	background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+.reference {
+	color: var(--accent);
+	font-size: 26px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+}
+
+/* ------------------------------------------------------------------ */
+/* Intervenant (bandeau bas gauche)                                    */
+
+#stage.tpl-intervenant { justify-content: flex-start; align-items: flex-end; }
+.speaker {
+	margin: 0 0 110px 110px;
+	display: flex;
+	align-items: stretch;
+	border-radius: 14px;
+	overflow: hidden;
+	box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
+	transform-origin: left bottom;
+}
+.speaker .bar { width: 14px; background: var(--accent); }
+.speaker .body {
+	position: relative;
+	padding: 22px 46px 22px 34px;
+	background: color-mix(in srgb, var(--primary) 88%, black);
+	min-width: 520px;
+}
+.speaker .body::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image: var(--pattern);
+	opacity: 0.14;
+}
+.speaker .name { position: relative; font-size: 52px; font-weight: 700; line-height: 1.15; }
+.speaker .name-ar { position: relative; font-family: var(--arabic); direction: rtl; font-size: 40px; line-height: 1.5; color: var(--accent); }
+.speaker .role { position: relative; margin-top: 6px; font-size: 30px; color: var(--accent); font-weight: 600; }
+
+/* ------------------------------------------------------------------ */
+/* Titre de conférence                                                  */
+
+.title-card {
+	width: 1500px;
+	padding: 70px 90px 60px;
+	text-align: center;
+	background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--primary) 85%, white 6%) 0%, color-mix(in srgb, var(--primary) 70%, black) 75%);
+	border: 3px solid var(--accent);
+	border-radius: 24px;
+	box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5), inset 0 0 0 10px color-mix(in srgb, var(--primary) 70%, black), inset 0 0 0 12px var(--accent);
+	overflow: hidden;
+	transform-origin: center center;
+}
+.title-card::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image: var(--pattern);
+	opacity: 0.12;
+}
+.title-card > * { position: relative; }
+.star {
+	width: 64px;
+	height: 64px;
+	margin: 0 auto 26px;
+	background: var(--accent);
+	clip-path: polygon(50% 0%, 61% 26%, 85% 15%, 74% 39%, 100% 50%, 74% 61%, 85% 85%, 61% 74%, 50% 100%, 39% 74%, 15% 85%, 26% 61%, 0% 50%, 26% 39%, 15% 15%, 39% 26%);
+}
+.title-card .title { font-size: 76px; font-weight: 700; line-height: 1.15; }
+.title-card .title-ar { font-family: var(--arabic); direction: rtl; font-size: 64px; line-height: 1.6; color: var(--accent); margin-top: 10px; }
+.title-card .subtitle { font-size: 40px; margin-top: 18px; }
+.title-card .info { margin-top: 30px; font-size: 30px; color: var(--accent); font-weight: 600; letter-spacing: 0.05em; }
+
+/* ------------------------------------------------------------------ */
+/* Bandeau défilant                                                     */
+
+#stage.tpl-bandeau { align-items: flex-end; }
+#stage.tpl-bandeau.pos-haut { align-items: flex-start; }
+.ticker {
+	width: 1920px;
+	height: 84px;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	background: color-mix(in srgb, var(--primary) 90%, black);
+	border-top: 3px solid var(--accent);
+	border-bottom: 3px solid var(--accent);
+	overflow: hidden;
+	transform-origin: center bottom;
+}
+.ticker .tag {
+	flex: none;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	padding: 0 34px;
+	background: var(--accent);
+	color: color-mix(in srgb, var(--primary) 80%, black);
+	font-size: 30px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	z-index: 1;
+}
+.ticker .track { flex: 1; overflow: hidden; height: 100%; display: flex; align-items: center; }
+.ticker .scroll {
+	display: inline-block;
+	white-space: nowrap;
+	font-size: 36px;
+	padding-left: 100%;
+	animation: ticker linear infinite;
+	unicode-bidi: plaintext;
+}
+@keyframes ticker {
+	from { transform: translateX(0); }
+	to { transform: translateX(-100%); }
+}
+
+/* ------------------------------------------------------------------ */
+/* Animations d'entrée et de sortie                                     */
+
+.anim-glisser.enter { animation: slide-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.anim-glisser.leave { animation: slide-out 0.6s ease-in both; }
+.anim-fondu.enter { animation: fade-in 0.8s ease-out both; }
+.anim-fondu.leave { animation: fade-out 0.6s ease-in both; }
+.anim-aucune.leave { visibility: hidden; }
+
+@keyframes slide-in { from { opacity: 0; translate: 0 60px; } to { opacity: 1; translate: 0 0; } }
+@keyframes slide-out { from { opacity: 1; translate: 0 0; } to { opacity: 0; translate: 0 60px; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
