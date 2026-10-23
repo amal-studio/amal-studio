@@ -20,6 +20,7 @@
 #include <obs-module.h>
 #include <util/bmem.h>
 #include <util/dstr.h>
+#include <util/platform.h>
 
 #include <cstdint>
 #include <cstdio>
@@ -84,14 +85,18 @@ std::string ColorToHex(long long value)
 /* Adresse de la page des modèles, servie par le gestionnaire de fichiers locaux du navigateur */
 std::string OverlayBaseUrl()
 {
-	char *path = obs_module_file("overlay/overlay.html");
-	if (!path) {
+	char *relative = obs_module_file("overlay/overlay.html");
+	if (!relative) {
 		blog(LOG_ERROR, "[amal-graphiques] Fichier overlay/overlay.html introuvable");
 		return std::string();
 	}
 
-	std::string file(path);
-	bfree(path);
+	/* Sous Windows, le moteur fournit un chemin relatif (« ../../data/obs-plugins/… »).
+	 * Le navigateur a besoin du chemin complet (« C:/Program Files/Amal Studio/… »). */
+	char *absolute = os_get_abs_path_ptr(relative);
+	std::string file(absolute ? absolute : relative);
+	bfree(absolute);
+	bfree(relative);
 	for (char &c : file) {
 		if (c == '\\') {
 			c = '/';
@@ -102,7 +107,9 @@ std::string OverlayBaseUrl()
 	if (!file.empty() && file[0] == '/') {
 		file.erase(0, 1);
 	}
-	return "http://absolute/" + PercentEncode(file, "/:");
+	const std::string url = "http://absolute/" + PercentEncode(file, "/:");
+	blog(LOG_INFO, "[amal-graphiques] Page des modèles : %s", url.c_str());
+	return url;
 }
 
 std::string BuildUrl(AmalGraphic *g, obs_data_t *settings)
