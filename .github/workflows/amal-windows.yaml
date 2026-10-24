@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  AMAL_VERSION: 0.7.1
+  AMAL_VERSION: 0.8.0
 
 jobs:
   windows-x64:
@@ -62,8 +62,13 @@ jobs:
                                'obs-plugins/64bit/amal-coran.dll', 'data/obs-plugins/amal-coran/tanzil/quran-uthmani.xml',
                                'data/obs-plugins/amal-coran/tanzil/quran-data.xml', 'data/obs-plugins/amal-coran/locale/fr-FR.ini',
                                'obs-plugins/64bit/amal-transitions.dll', 'data/obs-plugins/amal-transitions/locale/fr-FR.ini',
-                               'obs-plugins/64bit/amal-telephone.dll', 'data/obs-plugins/amal-telephone/locale/fr-FR.ini') ) {
-            if ( ! ( Test-Path (Join-Path $Install $File) ) ) { throw "Fichier du module Graphiques manquant : $File" }
+                               'obs-plugins/64bit/amal-telephone.dll', 'data/obs-plugins/amal-telephone/locale/fr-FR.ini',
+                               'obs-plugins/64bit/amal-bibliotheque.dll', 'data/obs-plugins/amal-bibliotheque/locale/fr-FR.ini',
+                               'data/obs-plugins/amal-bibliotheque/hadiths/ara-bukhari.min.json', 'data/obs-plugins/amal-bibliotheque/hadiths/ara-muslim.min.json',
+                               'data/obs-plugins/amal-bibliotheque/hadiths/ara-abudawud.min.json', 'data/obs-plugins/amal-bibliotheque/hadiths/ara-tirmidhi.min.json',
+                               'data/obs-plugins/amal-bibliotheque/hadiths/ara-nasai.min.json', 'data/obs-plugins/amal-bibliotheque/hadiths/ara-ibnmajah.min.json',
+                               'data/obs-plugins/amal-bibliotheque/hadiths/ara-malik.min.json') ) {
+            if ( ! ( Test-Path (Join-Path $Install $File) ) ) { throw "Fichier d'un module Amal manquant : $File" }
           }
           $Info = (Get-Item $Exe).VersionInfo
           Write-Output "ProductName : $($Info.ProductName)"

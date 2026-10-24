@@ -1,0 +1,9 @@
+Recueils de hadiths en arabe : projet « hadith-api » de Fawaz Ahmed
+https://github.com/fawazahmed0/hadith-api (version du dépôt : df57907be35291c91ad6a6691180e22ca9920784)
+Licence : The Unlicense (domaine public) - voir LICENCE-Unlicense.txt
+
+Fichiers copiés sans modification : ara-bukhari, ara-muslim, ara-abudawud,
+ara-tirmidhi, ara-nasai, ara-ibnmajah, ara-malik (format .min.json).
+Les degrés d'authenticité affichés par Amal Studio sont ceux présents dans
+ces fichiers, avec le nom du savant qui les a donnés. Amal Studio n'en
+calcule et n'en invente aucun.

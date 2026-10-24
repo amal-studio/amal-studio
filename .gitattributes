@@ -10,3 +10,6 @@ cmake/ALL_BUILD.vcxproj.user.in text eol=crlf
 
 # Amal Studio : textes Tanzil livrés à l octet près (aucune conversion de fin de ligne)
 plugins/amal-coran/data/tanzil/*.xml -text
+
+# Amal Studio : données de hadiths livrées telles quelles
+plugins/amal-bibliotheque/data/hadiths/*.json -text

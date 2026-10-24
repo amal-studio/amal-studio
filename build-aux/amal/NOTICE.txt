@@ -33,6 +33,9 @@ Composants tiers principaux
   texte complet dans data/obs-plugins/amal-graphiques/fonts/Amiri-OFL.txt
 - Texte coranique Tanzil (Uthmani 1.0.2), (C) 2008-2010 Tanzil.net : Creative Commons
   Attribution 3.0, copie conforme non modifiée - https://tanzil.net
+- Recueils de hadiths en arabe (Bukhari, Muslim, Abu Dawud, Tirmidhi, Nasa'i, Ibn Majah,
+  Malik) : projet hadith-api de fawazahmed0, domaine public (The Unlicense), fichiers non
+  modifiés - https://github.com/fawazahmed0/hadith-api
 Un inventaire détaillé des licences sera fourni avec la version 1.0.
 
 Copyright (C) Lain Bailey et les contributeurs d'OBS Studio

@@ -297,6 +297,10 @@ public:
 		nav->addWidget(next);
 		layout->addLayout(nav);
 
+		QPushButton *addSequence = new QPushButton(T("AddToSequence"), this);
+		addSequence->setToolTip(T("AddToSequence.Help"));
+		layout->addWidget(addSequence);
+
 		autoSend = new QCheckBox(T("AutoSend"), this);
 		autoSend->setChecked(true);
 		layout->addWidget(autoSend);
@@ -329,6 +333,7 @@ public:
 		connect(previous, &QPushButton::clicked, this, &QuranDock::previousVerse);
 		connect(next, &QPushButton::clicked, this, &QuranDock::nextVerse);
 		connect(show, &QPushButton::clicked, this, &QuranDock::send);
+		connect(addSequence, &QPushButton::clicked, this, &QuranDock::addToSequence);
 
 		ayaSpin->setMaximum((int)currentSura().ayas.size());
 		updatePreview();
@@ -516,10 +521,44 @@ private:
 						     : T("Search.Count").arg(found));
 	}
 
-	/* Envoi vers la source « Amal · Coran » de la scène affichée */
+	/* Ajout du verset affiché à la séquence du panneau Bibliothèque */
+	void addToSequence()
+	{
+		proc_handler_t *ph = obs_get_proc_handler();
+		calldata_t cd = {};
+		const QByteArray ar = displayedText().toUtf8();
+		const QByteArray ref = displayedReference().toUtf8();
+		calldata_set_string(&cd, "type", "verset");
+		calldata_set_string(&cd, "label", "");
+		calldata_set_string(&cd, "ar", ar.constData());
+		calldata_set_string(&cd, "fr", "");
+		calldata_set_string(&cd, "ref", ref.constData());
+		const bool called = proc_handler_call(ph, "amal_sequence_ajouter", &cd);
+		const bool ok = called && calldata_bool(&cd, "ok");
+		calldata_free(&cd);
+		status->setText(ok ? T("Status.Added").arg(displayedReference()) : T("Error.NoLibrary"));
+	}
+
+	/* Version 0.7 et avant : la source s'appelait « Amal · Coran ».
+	   Elle est renommée « Amal · Citation » (source commune à tous les textes). */
+	static void MigrateOldSource(const QString &name)
+	{
+		OBSSourceAutoRelease current = obs_get_source_by_name(name.toUtf8().constData());
+		if (current) {
+			return;
+		}
+		OBSSourceAutoRelease old = obs_get_source_by_name(T("Source.OldName").toUtf8().constData());
+		const char *id = old ? obs_source_get_unversioned_id(old) : nullptr;
+		if (id && strcmp(id, GRAPHIC_ID) == 0) {
+			obs_source_set_name(old, name.toUtf8().constData());
+		}
+	}
+
+	/* Envoi vers la source « Amal · Citation » de la scène affichée */
 	void send()
 	{
 		const QString name = T("Source.Name");
+		MigrateOldSource(name);
 		OBSDataAutoRelease settings = obs_data_create();
 		obs_data_set_string(settings, "modele", "verset");
 		obs_data_set_string(settings, "texte_arabe", displayedText().toUtf8().constData());
