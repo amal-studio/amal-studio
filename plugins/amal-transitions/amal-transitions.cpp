@@ -418,6 +418,9 @@ obs_properties_t *TransitionProperties(void *)
 	obs_property_list_add_string(style, obs_module_text("Style.Wipe"), "volet");
 	obs_property_list_add_string(style, obs_module_text("Style.Curtain"), "rideau");
 	obs_property_list_add_string(style, obs_module_text("Style.Circle"), "logo");
+	obs_property_list_add_string(style, obs_module_text("Style.Shards"), "eclats");
+	obs_property_list_add_string(style, obs_module_text("Style.Ribbons"), "rubans");
+	obs_property_list_add_string(style, obs_module_text("Style.Diamond"), "losange");
 
 	obs_properties_add_path(props, "logo", obs_module_text("Logo"), OBS_PATH_FILE,
 				"Images (*.png *.jpg *.jpeg *.webp *.svg *.gif)", nullptr);

@@ -200,10 +200,17 @@ std::string BuildUrl(AmalGraphic *g, obs_data_t *settings)
 	obs_data_set_string(data, "info", obs_data_get_string(settings, "info"));
 	obs_data_set_bool(data, "band", obs_data_get_bool(settings, "bande"));
 	obs_data_set_string(data, "bandLabel", obs_data_get_string(settings, "libelle_bande"));
-	const char *logo = obs_data_get_string(settings, "logo");
-	if (logo && *logo && os_file_exists(logo)) {
-		obs_data_set_string(data, "logo", LocalFileUrl(logo).c_str());
+	/* Images locales choisies par l'utilisateur : logo, second logo, visuel */
+	for (const char *key : {"logo", "logo2", "visuel"}) {
+		const char *file = obs_data_get_string(settings, key);
+		if (file && *file && os_file_exists(file)) {
+			obs_data_set_string(data, key, LocalFileUrl(file).c_str());
+		}
 	}
+	/* Cadre d'événement */
+	obs_data_set_string(data, "evt", obs_data_get_string(settings, "disposition_evt"));
+	obs_data_set_string(data, "edate", obs_data_get_string(settings, "date_evt"));
+	obs_data_set_string(data, "place", obs_data_get_string(settings, "lieu_evt"));
 
 	/* Cadres des dispositions : {"frames":[{x,y,w,h,label}…]} en unités 1920 x 1080 */
 	obs_data_set_string(data, "frame", obs_data_get_string(settings, "style_cadre"));
@@ -266,14 +273,15 @@ bool TemplateModified(obs_properties_t *props, obs_property_t *, obs_data_t *set
 	const bool tv = t == "direct";
 	const bool background = t == "fond";
 	const bool frames = t == "cadres";
-	const bool decor = background || frames;
+	const bool event = t == "evenement";
+	const bool decor = background || frames || event;
 
-	obs_property_set_visible(obs_properties_get(props, "libelle"), panel || ticker || tv);
+	obs_property_set_visible(obs_properties_get(props, "libelle"), panel || ticker || tv || event);
 	obs_property_set_visible(obs_properties_get(props, "texte_arabe"), panel || speaker || title);
-	obs_property_set_visible(obs_properties_get(props, "texte"), panel || ticker || tv);
+	obs_property_set_visible(obs_properties_get(props, "texte"), panel || ticker || tv || event);
 	obs_property_set_visible(obs_properties_get(props, "reference"), panel || title);
-	obs_property_set_visible(obs_properties_get(props, "titre"), speaker || title || tv);
-	obs_property_set_visible(obs_properties_get(props, "sous_titre"), speaker || title || tv);
+	obs_property_set_visible(obs_properties_get(props, "titre"), speaker || title || tv || event);
+	obs_property_set_visible(obs_properties_get(props, "sous_titre"), speaker || title || tv || event);
 	obs_property_set_visible(obs_properties_get(props, "vitesse"), ticker || tv);
 	obs_property_set_visible(obs_properties_get(props, "position"), !speaker && !tv && !decor);
 	obs_property_set_visible(obs_properties_get(props, "animation"), !decor);
@@ -284,22 +292,26 @@ bool TemplateModified(obs_properties_t *props, obs_property_t *, obs_data_t *set
 	obs_property_set_visible(obs_properties_get(props, "hauteur_max"), panel);
 	obs_property_set_visible(obs_properties_get(props, "duree_page"), panel);
 
-	for (const char *name : {"format_date", "decalage_hegire", "horloge", "badge_direct", "info", "logo", "bande",
+	for (const char *name : {"format_date", "decalage_hegire", "horloge", "badge_direct", "info", "bande",
 				 "libelle_bande"}) {
 		obs_property_set_visible(obs_properties_get(props, name), tv);
+	}
+	obs_property_set_visible(obs_properties_get(props, "logo"), tv || event);
+	for (const char *name : {"disposition_evt", "date_evt", "lieu_evt", "logo2", "visuel", "aide_evt"}) {
+		obs_property_set_visible(obs_properties_get(props, name), event);
 	}
 	obs_property_set_visible(obs_properties_get(props, "style_cadre"), frames);
 	obs_property_set_visible(obs_properties_get(props, "aide_cadres"), frames);
 
 	/* Libellés qui changent de sens selon le modèle */
 	obs_property_set_description(obs_properties_get(props, "titre"),
-				     obs_module_text(tv ? "BannerTitle" : "TitleField"));
+				     obs_module_text(tv ? "BannerTitle" : event ? "Event.Title" : "TitleField"));
 	obs_property_set_description(obs_properties_get(props, "sous_titre"),
-				     obs_module_text(tv ? "BannerSubtitle" : "Subtitle"));
+				     obs_module_text(tv ? "BannerSubtitle" : event ? "Event.Subtitle" : "Subtitle"));
 	obs_property_set_description(obs_properties_get(props, "libelle"),
-				     obs_module_text(tv ? "LiveLabel" : "Label"));
+				     obs_module_text(tv ? "LiveLabel" : event ? "Event.Label" : "Label"));
 	obs_property_set_description(obs_properties_get(props, "texte"),
-				     obs_module_text(tv ? "BandText" : "Text"));
+				     obs_module_text(tv ? "BandText" : event ? "Event.Cards" : "Text"));
 	return true;
 }
 
@@ -329,6 +341,7 @@ obs_properties_t *GetProperties(void *data)
 	obs_property_list_add_string(list, obs_module_text("Template.Broadcast"), "direct");
 	obs_property_list_add_string(list, obs_module_text("Template.Background"), "fond");
 	obs_property_list_add_string(list, obs_module_text("Template.Frames"), "cadres");
+	obs_property_list_add_string(list, obs_module_text("Template.Event"), "evenement");
 	obs_property_set_modified_callback(list, TemplateModified);
 
 	obs_properties_add_text(props, "libelle", obs_module_text("Label"), OBS_TEXT_DEFAULT);
@@ -356,6 +369,19 @@ obs_properties_t *GetProperties(void *data)
 				"Images (*.png *.jpg *.jpeg *.webp *.svg *.gif)", nullptr);
 	obs_properties_add_bool(props, "bande", obs_module_text("ShowBand"));
 	obs_properties_add_text(props, "libelle_bande", obs_module_text("BandLabel"), OBS_TEXT_DEFAULT);
+
+	/* Cadre d'événement */
+	obs_property_t *evt = obs_properties_add_list(props, "disposition_evt", obs_module_text("Event.Layout"),
+						      OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(evt, obs_module_text("Event.Layout.Frame"), "cadre");
+	obs_property_list_add_string(evt, obs_module_text("Event.Layout.Side"), "lateral");
+	obs_properties_add_text(props, "date_evt", obs_module_text("Event.Date"), OBS_TEXT_DEFAULT);
+	obs_properties_add_text(props, "lieu_evt", obs_module_text("Event.Place"), OBS_TEXT_DEFAULT);
+	obs_properties_add_path(props, "logo2", obs_module_text("Event.Logo2"), OBS_PATH_FILE,
+				"Images (*.png *.jpg *.jpeg *.webp *.svg *.gif)", nullptr);
+	obs_properties_add_path(props, "visuel", obs_module_text("Event.Visual"), OBS_PATH_FILE,
+				"Images (*.png *.jpg *.jpeg *.webp *.svg *.gif)", nullptr);
+	obs_properties_add_text(props, "aide_evt", obs_module_text("Event.Help"), OBS_TEXT_INFO);
 
 	/* Cadres (réglés par le panneau Dispositions) */
 	obs_property_t *frameStyle = obs_properties_add_list(props, "style_cadre", obs_module_text("FrameStyle"),
@@ -436,6 +462,7 @@ void GetDefaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "bande", false);
 	obs_data_set_default_string(settings, "style_cadre", "fine");
 	obs_data_set_default_string(settings, "habillage", "classique");
+	obs_data_set_default_string(settings, "disposition_evt", "cadre");
 	obs_data_set_default_bool(settings, "motif", true);
 }
 

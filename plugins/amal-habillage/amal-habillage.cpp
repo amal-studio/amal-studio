@@ -193,15 +193,67 @@ struct QuickGraphic {
 	const char *nameKey;
 	bool bottom;
 	bool openProperties;
+	const char *eventLayout; /* cadre d'événement : « cadre » ou « lateral » */
 };
 
 const QuickGraphic QUICK[] = {
-	{"titre", "Quick.Title", "Name.Title", false, true},
-	{"intervenant", "Quick.Speaker", "Name.Speaker", false, true},
-	{"direct", "Quick.Broadcast", "Name.Broadcast", false, true},
-	{"bandeau", "Quick.Ticker", "Name.Ticker", false, true},
-	{"rappel", "Quick.Reminder", "Name.Reminder", false, true},
-	{"fond", "Quick.Background", "Name.Background", true, false},
+	{"evenement", "Quick.EventFrame", "Name.EventFrame", false, true, "cadre"},
+	{"evenement", "Quick.EventSide", "Name.EventSide", false, true, "lateral"},
+	{"titre", "Quick.Title", "Name.Title", false, true, nullptr},
+	{"intervenant", "Quick.Speaker", "Name.Speaker", false, true, nullptr},
+	{"direct", "Quick.Broadcast", "Name.Broadcast", false, true, nullptr},
+	{"bandeau", "Quick.Ticker", "Name.Ticker", false, true, nullptr},
+	{"rappel", "Quick.Reminder", "Name.Reminder", false, true, nullptr},
+	{"fond", "Quick.Background", "Name.Background", true, false, nullptr},
+};
+
+/* Fenêtre transparente des cadres d'événement (unités 1920 x 1080), identique à overlay.js */
+struct Window {
+	double x, y, w, h;
+};
+
+Window EventWindow(const char *layout)
+{
+	if (layout && strcmp(layout, "lateral") == 0) {
+		return {600, 0, 1320, 870};
+	}
+	return {132, 92, 1656, 760};
+}
+
+/* Liste des sources vidéo (caméras, téléphones…), mise à jour à chaque ouverture */
+class VideoSourceCombo : public QComboBox {
+public:
+	explicit VideoSourceCombo(QWidget *parent) : QComboBox(parent) { refresh(); }
+
+	void showPopup() override
+	{
+		refresh();
+		QComboBox::showPopup();
+	}
+
+	void refresh()
+	{
+		const QString current = currentData().toString();
+		blockSignals(true);
+		clear();
+		addItem(T("Camera.None"), QString());
+		obs_enum_sources(
+			[](void *param, obs_source_t *source) {
+				VideoSourceCombo *combo = static_cast<VideoSourceCombo *>(param);
+				const uint32_t flags = obs_source_get_output_flags(source);
+				const char *id = obs_source_get_unversioned_id(source);
+				if ((flags & OBS_SOURCE_VIDEO) == 0 || (id && strcmp(id, GRAPHIC_ID) == 0)) {
+					return true;
+				}
+				const QString name = QString::fromUtf8(obs_source_get_name(source));
+				combo->addItem(name, name);
+				return true;
+			},
+			this);
+		const int index = findData(current);
+		setCurrentIndex(index < 0 ? 0 : index);
+		blockSignals(false);
+	}
 };
 
 void SetGlobalTheme(const Theme *theme)
@@ -301,6 +353,13 @@ public:
 		QLabel *addHelp = new QLabel(T("Add.Help"), addBox);
 		addHelp->setWordWrap(true);
 		al->addWidget(addHelp);
+		QHBoxLayout *cameraRow = new QHBoxLayout;
+		cameraRow->addWidget(new QLabel(T("Camera"), addBox));
+		cameraCombo = new VideoSourceCombo(addBox);
+		cameraCombo->setToolTip(T("Camera.Help"));
+		cameraRow->addWidget(cameraCombo, 1);
+		al->addLayout(cameraRow);
+
 		QGridLayout *grid = new QGridLayout;
 		int index = 0;
 		for (const QuickGraphic &q : QUICK) {
@@ -568,6 +627,14 @@ private:
 		SetGlobalTheme(&t);
 		OBSDataAutoRelease settings = t.toSettings(true);
 		obs_data_set_string(settings, "modele", q.model);
+		if (q.eventLayout) {
+			obs_data_set_string(settings, "disposition_evt", q.eventLayout);
+			if (strcmp(q.eventLayout, "lateral") == 0) {
+				obs_data_set_string(settings, "libelle", T("Placeholder.SideTitle").toUtf8().constData());
+				obs_data_set_string(settings, "texte", T("Placeholder.Cards").toUtf8().constData());
+			}
+			placeCamera(scene, EventWindow(q.eventLayout));
+		}
 		if (strcmp(q.model, "rappel") == 0) {
 			/* Pas de texte religieux par défaut : l'utilisateur saisit le sien */
 			obs_data_set_string(settings, "texte_arabe", "");
@@ -589,6 +656,44 @@ private:
 		if (q.openProperties) {
 			obs_frontend_open_source_properties(source);
 		}
+	}
+
+	/* Place la caméra choisie dans la fenêtre du cadre, recadrée pour la remplir */
+	void placeCamera(obs_scene_t *scene, const Window &w)
+	{
+		const QString cameraName = cameraCombo->currentData().toString();
+		if (cameraName.isEmpty()) {
+			return;
+		}
+		OBSSourceAutoRelease camera = obs_get_source_by_name(cameraName.toUtf8().constData());
+		if (!camera) {
+			return;
+		}
+		obs_sceneitem_t *item = obs_scene_find_source(scene, cameraName.toUtf8().constData());
+		if (!item) {
+			item = obs_scene_add(scene, camera);
+		}
+		if (!item) {
+			return;
+		}
+		obs_video_info ovi = {};
+		double sx = 1.0, sy = 1.0;
+		if (obs_get_video_info(&ovi) && ovi.base_width && ovi.base_height) {
+			sx = ovi.base_width / 1920.0;
+			sy = ovi.base_height / 1080.0;
+		}
+		vec2 pos;
+		vec2 bounds;
+		vec2_set(&pos, (float)(w.x * sx), (float)(w.y * sy));
+		vec2_set(&bounds, (float)(w.w * sx), (float)(w.h * sy));
+		obs_sceneitem_set_rot(item, 0.0f);
+		obs_sceneitem_set_alignment(item, OBS_ALIGN_LEFT | OBS_ALIGN_TOP);
+		obs_sceneitem_set_pos(item, &pos);
+		obs_sceneitem_set_bounds_type(item, OBS_BOUNDS_SCALE_OUTER);
+		obs_sceneitem_set_bounds_alignment(item, OBS_ALIGN_CENTER);
+		obs_sceneitem_set_bounds(item, &bounds);
+		obs_sceneitem_set_bounds_crop(item, true);
+		obs_sceneitem_set_visible(item, true);
 	}
 
 	/* ---------- Thèmes de l'utilisateur ---------- */
@@ -734,6 +839,7 @@ private:
 	QLineEdit *logoEdit = nullptr;
 	QPushButton *deleteButton = nullptr;
 	QLabel *status = nullptr;
+	VideoSourceCombo *cameraCombo = nullptr;
 	std::vector<Theme> customThemes;
 };
 

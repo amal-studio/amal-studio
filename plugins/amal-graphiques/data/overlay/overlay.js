@@ -233,6 +233,142 @@
 	}
 
 	/* ------------------------------------------------------------------ */
+	/* Cadres d'événement : un habillage plein écran avec une « fenêtre »   */
+	/* transparente où l'on place la caméra.                               */
+	/* Fenêtres (unités 1920 x 1080), identiques côté Studio graphique :    */
+	/*   cadre   : x 132, y 92, l 1656, h 760                               */
+	/*   lateral : x 600, y 0,  l 1320, h 870                               */
+
+	var WINDOWS = {
+		cadre: { x: 132, y: 92, w: 1656, h: 760 },
+		lateral: { x: 600, y: 0, w: 1320, h: 870 }
+	};
+
+	function holePolygon(r) {
+		var x2 = r.x + r.w, y2 = r.y + r.h;
+		return 'polygon(evenodd, 0 0, 1920px 0, 1920px 1080px, 0 1080px, 0 0, ' +
+			r.x + 'px ' + r.y + 'px, ' + r.x + 'px ' + y2 + 'px, ' + x2 + 'px ' + y2 + 'px, ' +
+			x2 + 'px ' + r.y + 'px, ' + r.x + 'px ' + r.y + 'px)';
+	}
+
+	function badge(url, className) {
+		var b = el('div', 'badge ' + className);
+		b.appendChild(el('img', '', '', { src: url, alt: '' }));
+		return b;
+	}
+
+	/* Lignes « Titre | détail » saisies par l'utilisateur (une carte par ligne) */
+	function infoCards(text) {
+		return str(text).split(/\r?\n/).map(function (line) {
+			var parts = line.split('|');
+			return { head: str(parts[0]), body: str(parts.slice(1).join('|')) };
+		}).filter(function (c) { return c.head || c.body; }).slice(0, 6);
+	}
+
+	function buildEventFrame(d) {
+		var layout = d.evt === 'lateral' ? 'lateral' : 'cadre';
+		var win = WINDOWS[layout];
+		var root = el('div', 'evt evt-' + layout);
+
+		var bg = el('div', 'evt-fond');
+		bg.style.clipPath = holePolygon(win);
+		root.appendChild(bg);
+
+		var border = el('div', 'evt-fenetre');
+		border.style.left = win.x + 'px';
+		border.style.top = win.y + 'px';
+		border.style.width = win.w + 'px';
+		border.style.height = win.h + 'px';
+		root.appendChild(border);
+
+		var logo = safeLogo(d.logo), logo2 = safeLogo(d.logo2), visual = safeLogo(d.visuel);
+		var title = str(d.title), subtitle = str(d.subtitle), label = str(d.label);
+		var date = str(d.edate), place = str(d.place);
+
+		if (layout === 'cadre') {
+			if (label) root.appendChild(el('div', 'evt-haut', label, { dir: 'auto' }));
+			if (logo) root.appendChild(badge(logo, 'gauche'));
+			if (logo2) root.appendChild(badge(logo2, 'droite'));
+			if (date) {
+				var side = el('div', 'evt-cote gauche');
+				side.appendChild(el('span', '', date, { dir: 'auto' }));
+				root.appendChild(side);
+			}
+			if (place) {
+				var right = el('div', 'evt-cote droite');
+				right.appendChild(el('span', 'pin'));
+				right.appendChild(el('span', '', place, { dir: 'auto' }));
+				root.appendChild(right);
+			}
+			var bottom = el('div', 'evt-bas' + (visual ? ' avec-visuel' : ''));
+			if (visual) root.appendChild(el('img', 'evt-visuel', '', { src: visual, alt: '' }));
+			var words = el('div', 'evt-textes');
+			if (subtitle) words.appendChild(el('div', 'evt-sous-titre', subtitle, { dir: 'auto' }));
+			words.appendChild(el('div', 'evt-titre', title || 'Titre de l’événement', { dir: 'auto' }));
+			bottom.appendChild(words);
+			root.appendChild(bottom);
+			return root;
+		}
+
+		/* Panneau latéral + bande basse */
+		var panel = el('div', 'evt-panneau');
+		if (visual) panel.appendChild(el('img', 'evt-visuel', '', { src: visual, alt: '' }));
+		if (label) panel.appendChild(el('div', 'evt-entete', label, { dir: 'auto' }));
+		var cards = el('div', 'evt-cartes');
+		infoCards(d.fr).forEach(function (c) {
+			var card = el('div', 'evt-carte');
+			if (c.head) card.appendChild(el('div', 'tete', c.head, { dir: 'auto' }));
+			if (c.body) card.appendChild(el('div', 'corps', c.body, { dir: 'auto' }));
+			cards.appendChild(card);
+		});
+		panel.appendChild(cards);
+		root.appendChild(panel);
+
+		var band = el('div', 'evt-bande');
+		if (date || place) {
+			var when = el('div', 'evt-quand');
+			if (date) when.appendChild(el('div', 'date', date, { dir: 'auto' }));
+			if (place) when.appendChild(el('div', 'lieu', place, { dir: 'auto' }));
+			band.appendChild(when);
+		}
+		var texts = el('div', 'evt-textes');
+		if (subtitle) texts.appendChild(el('div', 'evt-sous-titre', subtitle, { dir: 'auto' }));
+		texts.appendChild(el('div', 'evt-titre', title || 'Titre de l’événement', { dir: 'auto' }));
+		band.appendChild(texts);
+		if (logo2 || logo) band.appendChild(badge(logo2 || logo, 'bande-logo'));
+		root.appendChild(band);
+		return root;
+	}
+
+	/* Réduit un texte sur une ligne jusqu'à ce qu'il tienne en largeur */
+	function shrinkToWidth(node, minSize) {
+		for (var i = 0; i < 40 && node.scrollWidth > node.clientWidth + 1; i++) {
+			var size = parseFloat(getComputedStyle(node).fontSize);
+			if (size <= minSize) break;
+			node.style.fontSize = (size * 0.93) + 'px';
+		}
+	}
+
+	/* Réduit un bloc (plusieurs lignes possibles) jusqu'à ce qu'il tienne en hauteur */
+	function shrinkToHeight(node, maxHeight, minSize) {
+		for (var i = 0; i < 40 && node.scrollHeight > maxHeight + 1; i++) {
+			var size = parseFloat(getComputedStyle(node).fontSize);
+			if (size <= minSize) break;
+			node.style.fontSize = (size * 0.93) + 'px';
+		}
+	}
+
+	function fitEventFrame(root) {
+		root.querySelectorAll('.evt-quand div, .evt-titre, .evt-sous-titre, .evt-haut, .evt-cote span, .evt-carte .corps, .evt-carte .tete').forEach(function (n) {
+			shrinkToWidth(n, 14);
+		});
+		var heading = root.querySelector('.evt-entete');
+		if (heading) shrinkToHeight(heading, 180, 24);
+		var cards = root.querySelector('.evt-cartes');
+		if (cards) shrinkToHeight(cards, cards.clientHeight, 10);
+	}
+
+	/* ------------------------------------------------------------------ */
 	/* Fond décoratif et cadres des dispositions                           */
 
 	function buildBackground() {
@@ -343,17 +479,32 @@
 	/* Transition Amal (jouée sur ordre d'Amal Studio)                      */
 
 	function buildTransition(d) {
-		var style = ['volet', 'rideau', 'logo'].indexOf(d.style) >= 0 ? d.style : 'volet';
+		var style = ['volet', 'rideau', 'logo', 'eclats', 'rubans', 'losange'].indexOf(d.style) >= 0 ? d.style : 'volet';
 		var tr = el('div', 'tr style-' + style);
 		var duration = Math.max(400, Math.min(6000, Number(d.dur) || 1400));
 		tr.style.setProperty('--dur', duration + 'ms');
 
+		/* L'écran est entièrement couvert de 41 % à 59 % de la durée : la scène change à 50 % */
 		if (style === 'rideau') {
 			tr.appendChild(el('div', 'panneau haut'));
 			tr.appendChild(el('div', 'panneau bas'));
+		} else if (style === 'eclats') {
+			for (var i = 0; i < 5; i++) {
+				var band = el('div', 'panneau eclat e' + i);
+				band.style.setProperty('--i', String(i));
+				tr.appendChild(band);
+			}
+		} else if (style === 'rubans') {
+			for (var j = 0; j < 8; j++) {
+				var ribbon = el('div', 'panneau ruban' + (j % 2 ? ' impair' : ''));
+				ribbon.style.setProperty('--i', String(j));
+				ribbon.style.left = (j * 12.5) + '%';
+				tr.appendChild(ribbon);
+			}
 		} else {
 			tr.appendChild(el('div', 'panneau'));
 		}
+		tr.appendChild(el('div', 'eclair'));
 
 		var centre = el('div', 'centre');
 		var logo = safeLogo(d.logo);
@@ -429,6 +580,7 @@
 		else if (template === 'fond') card = buildBackground(d);
 		else if (template === 'cadres') card = buildFrames(d);
 		else if (template === 'transition') card = buildTransition(d);
+		else if (template === 'evenement') card = buildEventFrame(d);
 		else {
 			pages = buildPanelPages(d, stage);
 			card = pages[0];
@@ -437,6 +589,12 @@
 		/* Le fond et les cadres sont des éléments fixes : ni animation, ni durée */
 		if (template === 'fond' || template === 'cadres' || template === 'transition') {
 			stage.appendChild(card);
+			return;
+		}
+		if (template === 'evenement') {
+			stage.appendChild(card);
+			fitEventFrame(card);
+			card.classList.add('evt-entree');
 			return;
 		}
 

@@ -10,7 +10,7 @@ RequestExecutionLevel admin
 ManifestDPIAware true
 
 !ifndef APP_VERSION
-  !define APP_VERSION "0.9.1"
+  !define APP_VERSION "0.10.0"
 !endif
 !ifndef SOURCE_DIR
   !error "SOURCE_DIR doit pointer vers le dossier install produit par la compilation"
