@@ -1,0 +1,7 @@
+Texte coranique : Tanzil Quran Text (Uthmani, version 1.0.2)
+Copyright (C) 2008-2010 Tanzil.net - Licence Creative Commons Attribution 3.0
+Source : https://tanzil.net - mises à jour : https://tanzil.net/updates/
+
+Les fichiers quran-uthmani.xml et quran-data.xml sont des copies conformes
+des fichiers distribués par le projet Tanzil, bloc de licence compris.
+Amal Studio les lit sans jamais les modifier.

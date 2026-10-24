@@ -37,6 +37,7 @@
 #include <QPlainTextEdit>
 #include <QPointer>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QTime>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -380,6 +381,7 @@ public:
 		layout->addWidget(listHeader);
 
 		list = new QListWidget(this);
+		list->setMinimumHeight(140);
 		connect(list, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem *) { openSelected(); });
 		layout->addWidget(list, 1);
 
@@ -582,7 +584,11 @@ void ShowDockOnFirstRun()
 	}
 
 	QMainWindow *main = static_cast<QMainWindow *>(obs_frontend_get_main_window());
-	QDockWidget *dock = dockWidget ? qobject_cast<QDockWidget *>(dockWidget->parentWidget()) : nullptr;
+	/* Le panneau est dans une zone de défilement : on remonte jusqu'au dock */
+	QDockWidget *dock = nullptr;
+	for (QWidget *w = dockWidget; w && !dock; w = w->parentWidget()) {
+		dock = qobject_cast<QDockWidget *>(w);
+	}
 	if (!main || !dock) {
 		return;
 	}
@@ -635,10 +641,16 @@ void FrontendEvent(enum obs_frontend_event event, void *)
 bool obs_module_load(void)
 {
 	QWidget *main = static_cast<QWidget *>(obs_frontend_get_main_window());
-	dockWidget = new ProjectsDock(main);
+	/* Zone de défilement : quand le panneau est petit, on fait défiler son contenu */
+	QScrollArea *scroll = new QScrollArea(main);
+	scroll->setWidgetResizable(true);
+	scroll->setFrameShape(QFrame::NoFrame);
+	scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	dockWidget = new ProjectsDock(scroll);
+	scroll->setWidget(dockWidget);
 
-	if (!obs_frontend_add_dock_by_id(DOCK_ID, obs_module_text("Dock.Title"), dockWidget)) {
-		delete dockWidget;
+	if (!obs_frontend_add_dock_by_id(DOCK_ID, obs_module_text("Dock.Title"), scroll)) {
+		delete scroll;
 		return false;
 	}
 

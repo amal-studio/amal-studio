@@ -31,6 +31,8 @@ Composants tiers principaux
 - Chromium Embedded Framework (source navigateur) : licence BSD
 - Police Amiri 1.003 (Khaled Hosny et le projet Amiri) : SIL Open Font License 1.1,
   texte complet dans data/obs-plugins/amal-graphiques/fonts/Amiri-OFL.txt
+- Texte coranique Tanzil (Uthmani 1.0.2), (C) 2008-2010 Tanzil.net : Creative Commons
+  Attribution 3.0, copie conforme non modifiée - https://tanzil.net
 Un inventaire détaillé des licences sera fourni avec la version 1.0.
 
 Copyright (C) Lain Bailey et les contributeurs d'OBS Studio

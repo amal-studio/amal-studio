@@ -44,6 +44,7 @@
 #if defined(_WIN32) || defined(WHATSNEW_ENABLED)
 #include <utility/WhatsNewInfoThread.hpp>
 #include <amal-branding.hpp>
+#include <amal/amal-scroll.hpp>
 #endif
 #include <widgets/AudioMixer.hpp>
 #include <widgets/OBSProjector.hpp>
@@ -363,6 +364,12 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	int sideDockWidth = std::min(width() * 30 / 100, 320);
 	resizeDocks({ui->scenesDock, ui->sourcesDock}, {sideDockWidth, sideDockWidth}, Qt::Horizontal);
 	addDockWidget(Qt::BottomDockWidgetArea, controlsDock);
+
+	/* Amal Studio : les panneaux défilent quand leur contenu dépasse */
+	amal::MakeDockScrollable(ui->scenesDock);
+	amal::MakeDockScrollable(ui->sourcesDock);
+	amal::MakeDockScrollable(ui->transitionsDock);
+	amal::MakeDockScrollable(controlsDock);
 
 	startingDockLayout = saveState();
 

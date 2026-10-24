@@ -8,6 +8,7 @@ add_library(amal-projets MODULE)
 add_library(OBS::amal-projets ALIAS amal-projets)
 
 target_sources(amal-projets PRIVATE amal-projets.cpp)
+target_include_directories(amal-projets PRIVATE "${CMAKE_SOURCE_DIR}/shared")
 
 target_link_libraries(amal-projets PRIVATE OBS::frontend-api OBS::libobs Qt::Widgets)
 

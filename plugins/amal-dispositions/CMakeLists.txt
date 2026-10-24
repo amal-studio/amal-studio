@@ -8,6 +8,7 @@ add_library(amal-dispositions MODULE)
 add_library(OBS::amal-dispositions ALIAS amal-dispositions)
 
 target_sources(amal-dispositions PRIVATE amal-dispositions.cpp)
+target_include_directories(amal-dispositions PRIVATE "${CMAKE_SOURCE_DIR}/shared")
 
 target_link_libraries(amal-dispositions PRIVATE OBS::frontend-api OBS::libobs Qt::Widgets)
 

@@ -27,6 +27,9 @@ endif()
 add_executable(obs-studio)
 add_executable(OBS::studio ALIAS obs-studio)
 
+# Amal Studio : outils partagés (panneaux défilants…)
+target_include_directories(obs-studio PRIVATE "${CMAKE_SOURCE_DIR}/shared")
+
 target_link_libraries(
   obs-studio
   PRIVATE

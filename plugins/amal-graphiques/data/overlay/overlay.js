@@ -259,6 +259,28 @@
 		return wrap;
 	}
 
+	function fitPanel(card) {
+		var arabicText = card.querySelector('.arabic');
+		var translation = card.querySelector('.translation');
+		var limit = window.innerHeight * 0.9;
+		for (var i = 0; i < 40 && card.getBoundingClientRect().height > limit; i++) {
+			if (arabicText) {
+				var size = parseFloat(getComputedStyle(arabicText).fontSize);
+				if (size <= 26) break;
+				arabicText.style.fontSize = (size * 0.92) + 'px';
+			}
+			if (translation) {
+				var tsize = parseFloat(getComputedStyle(translation).fontSize);
+				if (tsize > 20) translation.style.fontSize = (tsize * 0.94) + 'px';
+			}
+		}
+		/* Dans tous les cas, ne jamais déborder de l'image */
+		var rect = card.getBoundingClientRect();
+		if (rect.height > limit) {
+			card.style.scale = String(Math.max(0.3, limit / rect.height) * (Number(getComputedStyle(document.documentElement).getPropertyValue('--scale')) || 1));
+		}
+	}
+
 	/* La mise en page est prévue pour 1920 x 1080 : on l'adapte à la taille réelle */
 	function fitToCanvas() {
 		var zoom = window.innerWidth / 1920;
@@ -309,6 +331,11 @@
 
 		if (template === 'bandeau' || template === 'direct') {
 			applyTicker(card, d);
+		}
+
+		/* Longs versets : réduire le texte jusqu'à ce que le panneau tienne dans l'image */
+		if (card.classList.contains('panel')) {
+			fitPanel(card);
 		}
 
 		/* Durée d'affichage (secondes) : 0 = reste affiché */
