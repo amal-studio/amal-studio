@@ -10,7 +10,7 @@ RequestExecutionLevel admin
 ManifestDPIAware true
 
 !ifndef APP_VERSION
-  !define APP_VERSION "0.7.0"
+  !define APP_VERSION "0.7.1"
 !endif
 !ifndef SOURCE_DIR
   !error "SOURCE_DIR doit pointer vers le dossier install produit par la compilation"
@@ -90,9 +90,10 @@ Section "Amal Studio" SecMain
   ; équivalent du réglage Windows Paramètres > Écran > Graphiques.
   WriteRegStr HKCU "Software\Microsoft\DirectX\UserGpuPreferences" "$INSTDIR\${APP_EXE}" "GpuPreference=2;"
 
-  ; Réception de la caméra du téléphone (SRT) : autoriser Amal Studio sur les réseaux privés
+  ; Réception de la caméra du téléphone (SRT, ports UDP 9001 à 9003) : autoriser Amal Studio
+  ; quel que soit le type de réseau Windows (beaucoup de Wi-Fi sont classés « publics »)
   nsExec::Exec 'netsh advfirewall firewall delete rule name="Amal Studio"'
-  nsExec::Exec 'netsh advfirewall firewall add rule name="Amal Studio" dir=in action=allow program="$INSTDIR\${APP_EXE}" enable=yes profile=private'
+  nsExec::Exec 'netsh advfirewall firewall add rule name="Amal Studio" dir=in action=allow program="$INSTDIR\${APP_EXE}" protocol=UDP localport=9001-9003 enable=yes profile=any'
 
   WriteUninstaller "$INSTDIR\uninstall.exe"
   WriteRegStr HKLM "Software\Amal Studio" "InstallDir" "$INSTDIR"
