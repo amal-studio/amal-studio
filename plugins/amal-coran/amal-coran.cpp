@@ -17,6 +17,7 @@
 #include <obs-module.h>
 #include <obs-frontend-api.h>
 #include <obs.hpp>
+#include <util/config-file.h>
 #include <util/platform.h>
 
 #include <QCheckBox>
@@ -55,6 +56,7 @@ namespace {
 constexpr const char *DOCK_ID = "amal-coran";
 constexpr const char *SAVE_KEY = "amal_coran";
 constexpr const char *GRAPHIC_ID = "amal_graphique";
+constexpr const char *CONFIG_SECTION = "AmalCoran";
 constexpr int MAX_RESULTS = 200;
 
 inline QString T(const char *key)
@@ -618,6 +620,38 @@ void SaveCallback(obs_data_t *saveData, bool saving, void *)
 	}
 }
 
+/* Au premier lancement, le panneau est placé à droite de la fenêtre et affiché. */
+void ShowDockOnFirstRun()
+{
+	config_t *config = obs_frontend_get_app_config();
+	if (!config || config_get_bool(config, CONFIG_SECTION, "DockPlaced")) {
+		return;
+	}
+
+	QMainWindow *main = static_cast<QMainWindow *>(obs_frontend_get_main_window());
+	QDockWidget *dock = nullptr;
+	for (QWidget *w = dockWidget; w && !dock; w = w->parentWidget()) {
+		dock = qobject_cast<QDockWidget *>(w);
+	}
+	if (!main || !dock) {
+		return;
+	}
+
+	dock->setFloating(false);
+	main->addDockWidget(Qt::RightDockWidgetArea, dock);
+	dock->show();
+
+	config_set_bool(config, CONFIG_SECTION, "DockPlaced", true);
+	config_save_safe(config, "tmp", nullptr);
+}
+
+void FrontendEvent(enum obs_frontend_event event, void *)
+{
+	if (event == OBS_FRONTEND_EVENT_FINISHED_LOADING) {
+		ShowDockOnFirstRun();
+	}
+}
+
 } // namespace
 
 bool obs_module_load(void)
@@ -643,12 +677,14 @@ bool obs_module_load(void)
 						      HotkeyPrevious, nullptr);
 
 	obs_frontend_add_save_callback(SaveCallback, nullptr);
+	obs_frontend_add_event_callback(FrontendEvent, nullptr);
 	blog(LOG_INFO, "[amal-coran] Module Coran chargé");
 	return true;
 }
 
 void obs_module_unload(void)
 {
+	obs_frontend_remove_event_callback(FrontendEvent, nullptr);
 	obs_frontend_remove_save_callback(SaveCallback, nullptr);
 	obs_hotkey_unregister(nextHotkey);
 	obs_hotkey_unregister(previousHotkey);
