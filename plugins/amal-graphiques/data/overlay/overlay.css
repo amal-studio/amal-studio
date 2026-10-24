@@ -1029,3 +1029,167 @@ html.look-epure .title-card .title { text-shadow: none; }
 @keyframes tc-line { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 /* L'ombre suit le bandeau pendant son ouverture */
 .speaker { box-shadow: none; filter: drop-shadow(0 16px 20px rgba(0, 0, 0, 0.45)); }
+
+/* ================================================================== */
+/* Fonds d'événement                                                   */
+
+.fond-evt {
+	background:
+		radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--primary) 70%, white 10%) 0%, transparent 60%),
+		linear-gradient(180deg, color-mix(in srgb, var(--primary) 35%, black) 0%, color-mix(in srgb, var(--primary) 70%, black) 100%);
+}
+.fond-evt::before { opacity: 0.08; }
+.fond-evt .decor { position: absolute; inset: 0; overflow: visible; }
+.decor .twinkle { fill: color-mix(in srgb, var(--accent) 40%, white); animation: twinkle 3s ease-in-out infinite alternate; }
+@keyframes twinkle { from { opacity: 0.25; } to { opacity: 1; } }
+.decor .astre { fill: var(--accent); filter: drop-shadow(0 0 18px color-mix(in srgb, var(--accent) 70%, transparent)); }
+.decor .halo { fill: color-mix(in srgb, var(--accent) 14%, transparent); filter: blur(30px); }
+.decor .scintille { animation: twinkle 1.8s ease-in-out infinite alternate; }
+.decor .etoile-fond { fill: none; stroke: color-mix(in srgb, var(--accent) 35%, transparent); stroke-width: 3; transform-origin: 960px 640px; animation: tourne 90s linear infinite; }
+@keyframes tourne { to { transform: rotate(360deg); } }
+.decor .ville { fill: color-mix(in srgb, var(--primary) 30%, black); }
+.decor .coupole-verte { fill: color-mix(in srgb, #2E8B57 75%, black); }
+.decor .corde { stroke: color-mix(in srgb, var(--accent) 60%, transparent); stroke-width: 2; }
+.decor .metal { fill: var(--accent); }
+.decor .verre-lanterne { fill: color-mix(in srgb, var(--accent) 45%, #FFF3C4); opacity: 0.9; }
+.decor .nervure { stroke: var(--accent); stroke-width: 3; }
+.decor .lueur { fill: color-mix(in srgb, var(--accent) 35%, transparent); filter: blur(22px); animation: lueur 2.6s ease-in-out infinite alternate; }
+@keyframes lueur { from { opacity: 0.5; } to { opacity: 1; } }
+.decor .swing { animation: balance 4.5s ease-in-out infinite alternate; }
+@keyframes balance { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+.decor .rayon { fill: color-mix(in srgb, var(--accent) 9%, transparent); animation: rayon 6s ease-in-out infinite alternate; }
+@keyframes rayon { from { opacity: 0.35; } to { opacity: 1; } }
+.decor .eclat-feu line { stroke: var(--accent); stroke-width: 3; stroke-linecap: round; }
+.decor .eclat-feu { opacity: 0; animation: feu 3.6s ease-out infinite; }
+@keyframes feu { 0% { opacity: 0; transform: scale(0.2); } 15% { opacity: 1; } 60% { opacity: 0; transform: scale(1.15); } 100% { opacity: 0; transform: scale(1.15); } }
+.decor .vague { fill: color-mix(in srgb, var(--primary) 50%, black); opacity: 0.85; animation: vague 7s ease-in-out infinite alternate; }
+.decor .vague.v1 { fill: color-mix(in srgb, var(--primary) 40%, black); }
+.decor .vague.v2 { fill: color-mix(in srgb, var(--primary) 28%, black); }
+@keyframes vague { from { transform: translateX(0); } to { transform: translateX(-80px); } }
+.decor .kaaba { fill: #111214; }
+.decor .arete { stroke: #26282c; stroke-width: 3; }
+.decor .bande-or { fill: none; stroke: var(--accent); stroke-width: 16; }
+.decor .lueur-sol { fill: color-mix(in srgb, var(--accent) 30%, transparent); filter: blur(20px); }
+.decor .chemin-lumiere { fill: none; stroke: color-mix(in srgb, var(--accent) 70%, white); stroke-width: 6; filter: drop-shadow(0 0 16px var(--accent)); stroke-dasharray: 3200; stroke-dashoffset: 3200; animation: chemin 6s ease-in-out infinite alternate; }
+@keyframes chemin { to { stroke-dashoffset: 0; } }
+
+.salutation {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 70px;
+	text-align: center;
+	animation: lt-rise 1.2s 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.salut-ar { font-family: var(--arabic); font-size: 110px; line-height: 1.5; color: var(--accent); text-shadow: 0 6px 30px rgba(0, 0, 0, 0.5); }
+.salut-fr { font-size: 52px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); }
+html.look-epure .fond-evt { background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 35%, black) 0%, color-mix(in srgb, var(--primary) 70%, black) 100%); }
+html.look-epure .salut-fr { color: #FFFFFF; }
+
+/* ================================================================== */
+/* Intro vidéo                                                         */
+
+#stage.tpl-intro { display: block; }
+.intro { position: absolute; inset: 0; overflow: hidden; --d: 8s; }
+.intro .fond { animation: fade-in calc(var(--d) * 0.12) ease-out both; }
+.intro-art { position: absolute; inset: 0; }
+.intro-centre {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 18px;
+	padding: 0 120px;
+	animation: intro-sortie var(--d) linear both;
+}
+@keyframes intro-sortie { 0%, 88% { opacity: 1; transform: none; } 100% { opacity: 0; transform: scale(1.06); } }
+.intro-logo {
+	max-width: 420px;
+	max-height: 300px;
+	object-fit: contain;
+	filter: drop-shadow(0 0 30px color-mix(in srgb, var(--accent) 60%, transparent)) drop-shadow(0 14px 30px rgba(0, 0, 0, 0.5));
+	animation: intro-logo calc(var(--d) * 0.3) calc(var(--d) * 0.14) cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.intro-embleme {
+	width: 190px;
+	height: 190px;
+	background: var(--accent);
+	clip-path: polygon(50% 0%, 61% 26%, 85% 15%, 74% 39%, 100% 50%, 74% 61%, 85% 85%, 61% 74%, 50% 100%, 39% 74%, 15% 85%, 26% 61%, 0% 50%, 26% 39%, 15% 15%, 39% 26%);
+	animation: intro-logo calc(var(--d) * 0.3) calc(var(--d) * 0.14) cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+@keyframes intro-logo { from { opacity: 0; transform: scale(0.3) rotate(-25deg); } to { opacity: 1; transform: none; } }
+.intro-filet {
+	width: 520px;
+	height: 3px;
+	background: linear-gradient(90deg, transparent, var(--accent), transparent);
+	animation: tc-line calc(var(--d) * 0.15) calc(var(--d) * 0.32) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.intro-ar { font-family: var(--arabic); font-size: 76px; line-height: 1.4; color: var(--accent); max-width: 100%; animation: lt-rise calc(var(--d) * 0.12) calc(var(--d) * 0.36) cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.intro-titre {
+	max-width: 100%;
+	white-space: nowrap;
+	overflow: hidden;
+	font-family: 'Segoe UI Black', 'Segoe UI', var(--latin);
+	font-size: 96px;
+	font-weight: 900;
+	line-height: 1.1;
+	color: var(--ink);
+	text-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+	animation: lt-rise calc(var(--d) * 0.12) calc(var(--d) * 0.4) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+html.look-epure .intro-titre { color: #FFFFFF; }
+.intro-sous-titre {
+	max-width: 100%;
+	white-space: nowrap;
+	overflow: hidden;
+	font-size: 40px;
+	font-weight: 700;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: var(--accent);
+	animation: intro-espace calc(var(--d) * 0.2) calc(var(--d) * 0.46) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes intro-espace { from { opacity: 0; letter-spacing: 0.6em; } to { opacity: 1; letter-spacing: 0.18em; } }
+.intro-reflet {
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.22) 50%, transparent 58%);
+	background-size: 260% 100%;
+	opacity: 0;
+	animation: intro-reflet calc(var(--d) * 0.16) calc(var(--d) * 0.5) ease-in-out both;
+	pointer-events: none;
+}
+@keyframes intro-reflet { 0% { opacity: 1; background-position: 100% 0; } 100% { opacity: 1; background-position: 0% 0; } }
+
+/* Style « Étoile » : l'étoile se dessine puis tourne lentement */
+.intro-etoile { transform-origin: 960px 540px; animation: tourne 60s linear infinite; }
+.intro-etoile * {
+	fill: none;
+	stroke: var(--accent);
+	stroke-width: 3;
+	stroke-dasharray: 100;
+	stroke-dashoffset: 100;
+	opacity: 0.85;
+	animation: intro-trace calc(var(--d) * 0.3) calc(var(--d) * 0.04) ease-in-out forwards;
+}
+.intro-etoile .fin { stroke-width: 1.5; opacity: 0.5; }
+@keyframes intro-trace { to { stroke-dashoffset: 0; } }
+
+/* Style « Arches » : des arches traversées comme un couloir */
+.intro-arche {
+	fill: none;
+	stroke: var(--accent);
+	stroke-width: 6;
+	opacity: 0;
+	transform-origin: 960px 640px;
+	animation: intro-arche calc(var(--d) * 0.4) cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes intro-arche { 0% { opacity: 0; transform: scale(0.15); } 30% { opacity: 0.9; } 100% { opacity: 0; transform: scale(3.2); } }
+
+/* Style « Lumière » : faisceau qui traverse, particules qui montent */
+.intro-faisceau { fill: var(--accent); filter: drop-shadow(0 0 20px var(--accent)); animation: intro-faisceau calc(var(--d) * 0.25) calc(var(--d) * 0.06) ease-in-out both; }
+@keyframes intro-faisceau { from { transform: translateX(0); opacity: 1; } 80% { opacity: 1; } to { transform: translateX(2400px); opacity: 0; } }
+.intro-particule { fill: color-mix(in srgb, var(--accent) 70%, white); opacity: 0; animation: intro-particule 6s ease-out infinite; }
+@keyframes intro-particule { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-900px); } }

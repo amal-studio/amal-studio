@@ -764,7 +764,13 @@ private:
 				obs_frontend_set_current_transition(amal);
 			}
 		}
-		obs_frontend_set_current_scene(scene);
+		/* En mode studio, la relecture passe directement à l'antenne (aperçu puis transition) */
+		if (obs_frontend_preview_program_mode_active()) {
+			obs_frontend_set_current_preview_scene(scene);
+			obs_frontend_preview_program_trigger_transition();
+		} else {
+			obs_frontend_set_current_scene(scene);
+		}
 	}
 
 	QLabel *bufferStatus = nullptr;

@@ -27,6 +27,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFormLayout>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -43,6 +44,8 @@
 #include <QPointer>
 #include <QPushButton>
 #include <QSaveFile>
+#include <QSpinBox>
+#include <QTimer>
 #include <QScrollArea>
 #include <QVBoxLayout>
 
@@ -256,6 +259,66 @@ public:
 	}
 };
 
+/* Fonds d'événement : clé, salutation arabe proposée (formule courante, modifiable) */
+struct EventBackground {
+	const char *key;
+	const char *arabic;
+};
+
+const EventBackground EVENT_BACKGROUNDS[] = {
+	{"ramadan", "\xD8\xB1\xD9\x85\xD8\xB6\xD8\xA7\xD9\x86 \xD9\x85\xD8\xA8\xD8\xA7\xD8\xB1\xD9\x83"},
+	{"laylat", "\xD9\x84\xD9\x8A\xD9\x84\xD8\xA9 \xD8\xA7\xD9\x84\xD9\x82\xD8\xAF\xD8\xB1"},
+	{"aid-fitr", "\xD8\xB9\xD9\x8A\xD8\xAF \xD9\x85\xD8\xA8\xD8\xA7\xD8\xB1\xD9\x83"},
+	{"aid-adha", "\xD8\xB9\xD9\x8A\xD8\xAF \xD8\xA3\xD8\xB6\xD8\xAD\xD9\x89 \xD9\x85\xD8\xA8\xD8\xA7\xD8\xB1\xD9\x83"},
+	{"hajj", "\xD8\xAD\xD8\xAC \xD9\x85\xD8\xA8\xD8\xB1\xD9\x88\xD8\xB1"},
+	{"hegire", "\xD8\xB1\xD8\xA3\xD8\xB3 \xD8\xA7\xD9\x84\xD8\xB3\xD9\x86\xD8\xA9 \xD8\xA7\xD9\x84\xD9\x87\xD8\xAC\xD8\xB1\xD9\x8A\xD8\xA9"},
+	{"achoura", "\xD8\xB9\xD8\xA7\xD8\xB4\xD9\x88\xD8\xB1\xD8\xA7\xD8\xA1"},
+	{"maouloud", "\xD8\xA7\xD9\x84\xD9\x85\xD9\x88\xD9\x84\xD8\xAF \xD8\xA7\xD9\x84\xD9\x86\xD8\xA8\xD9\x88\xD9\x8A"},
+	{"isra", "\xD8\xA7\xD9\x84\xD8\xA5\xD8\xB3\xD8\xB1\xD8\xA7\xD8\xA1 \xD9\x88\xD8\xA7\xD9\x84\xD9\x85\xD8\xB9\xD8\xB1\xD8\xA7\xD8\xAC"},
+	{"jumua", "\xD9\x8A\xD9\x88\xD9\x85 \xD8\xA7\xD9\x84\xD8\xAC\xD9\x85\xD8\xB9\xD8\xA9"},
+};
+
+/* Liste des scènes, mise à jour à chaque ouverture */
+class SceneCombo : public QComboBox {
+public:
+	explicit SceneCombo(QWidget *parent) : QComboBox(parent) { refresh(); }
+
+	void showPopup() override
+	{
+		refresh();
+		QComboBox::showPopup();
+	}
+
+	void refresh()
+	{
+		const QString current = currentData().toString();
+		blockSignals(true);
+		clear();
+		addItem(T("Intro.NextScene.None"), QString());
+		obs_frontend_source_list scenes = {};
+		obs_frontend_get_scenes(&scenes);
+		for (size_t i = 0; i < scenes.sources.num; i++) {
+			const QString name = QString::fromUtf8(obs_source_get_name(scenes.sources.array[i]));
+			addItem(name, name);
+		}
+		obs_frontend_source_list_free(&scenes);
+		const int index = findData(current);
+		setCurrentIndex(index < 0 ? 0 : index);
+		blockSignals(false);
+	}
+};
+
+/* Montre une scène à l'antenne (en mode studio : aperçu puis transition) */
+void ShowOnProgram(obs_source_t *scene)
+{
+	if (obs_frontend_preview_program_mode_active()) {
+		obs_frontend_set_current_preview_scene(scene);
+		obs_frontend_preview_program_trigger_transition();
+	} else {
+		obs_frontend_set_current_scene(scene);
+	}
+}
+
 void SetGlobalTheme(const Theme *theme)
 {
 	QByteArray json;
@@ -371,6 +434,50 @@ public:
 		}
 		al->addLayout(grid);
 		layout->addWidget(addBox);
+
+		/* ---------- 3. Événements et intro ---------- */
+		QGroupBox *eventBox = new QGroupBox(T("Section.Events"), this);
+		QVBoxLayout *el = new QVBoxLayout(eventBox);
+		QHBoxLayout *eventRow = new QHBoxLayout;
+		eventCombo = new QComboBox(eventBox);
+		eventCombo->addItem(T("EventBg.none"), QString());
+		for (const EventBackground &e : EVENT_BACKGROUNDS) {
+			const std::string key = std::string("EventBg.") + e.key;
+			eventCombo->addItem(T(key.c_str()), e.key);
+		}
+		QPushButton *addBackground = new QPushButton(T("Events.AddBackground"), eventBox);
+		eventRow->addWidget(eventCombo, 1);
+		eventRow->addWidget(addBackground);
+		el->addLayout(eventRow);
+		QLabel *eventHelp = new QLabel(T("Events.Help"), eventBox);
+		eventHelp->setWordWrap(true);
+		el->addWidget(eventHelp);
+
+		QFormLayout *introForm = new QFormLayout;
+		introStyle = new QComboBox(eventBox);
+		introStyle->addItem(T("Intro.Style.Star"), "etoile");
+		introStyle->addItem(T("Intro.Style.Arches"), "arches");
+		introStyle->addItem(T("Intro.Style.Light"), "lumiere");
+		introDuration = new QSpinBox(eventBox);
+		introDuration->setRange(3, 30);
+		introDuration->setValue(8);
+		introDuration->setSuffix(" s");
+		nextScene = new SceneCombo(eventBox);
+		introForm->addRow(T("Intro.Style"), introStyle);
+		introForm->addRow(T("Intro.Duration"), introDuration);
+		introForm->addRow(T("Intro.NextScene"), nextScene);
+		el->addLayout(introForm);
+		QHBoxLayout *introRow = new QHBoxLayout;
+		QPushButton *createIntro = new QPushButton(T("Intro.Create"), eventBox);
+		recordButton = new QPushButton(T("Intro.Record"), eventBox);
+		introRow->addWidget(createIntro);
+		introRow->addWidget(recordButton);
+		el->addLayout(introRow);
+		layout->addWidget(eventBox);
+
+		connect(addBackground, &QPushButton::clicked, this, &StudioDock::addEventBackground);
+		connect(createIntro, &QPushButton::clicked, this, &StudioDock::createIntroScene);
+		connect(recordButton, &QPushButton::clicked, this, &StudioDock::recordIntro);
 
 		status = new QLabel(this);
 		status->setWordWrap(true);
@@ -696,6 +803,178 @@ private:
 		obs_sceneitem_set_visible(item, true);
 	}
 
+	/* ---------- Événements et intro ---------- */
+
+	static obs_scene_t *CurrentScene(OBSSourceAutoRelease &holder)
+	{
+		holder = obs_frontend_preview_program_mode_active() ? obs_frontend_get_current_preview_scene()
+								    : obs_frontend_get_current_scene();
+		return obs_scene_from_source(holder);
+	}
+
+	void addEventBackground()
+	{
+		OBSSourceAutoRelease holder;
+		obs_scene_t *scene = CurrentScene(holder);
+		if (!scene) {
+			status->setText(T("Error.NoScene"));
+			return;
+		}
+		const QString key = eventCombo->currentData().toString();
+		const Theme t = theme();
+		SetGlobalTheme(&t);
+		OBSDataAutoRelease settings = t.toSettings(true);
+		obs_data_set_string(settings, "modele", "fond");
+		obs_data_set_string(settings, "fond_evenement", key.toUtf8().constData());
+		obs_data_set_bool(settings, "salutation", !key.isEmpty());
+		obs_data_set_string(settings, "texte_arabe", "");
+		obs_data_set_string(settings, "titre", "");
+		for (const EventBackground &e : EVENT_BACKGROUNDS) {
+			if (key == e.key) {
+				const std::string greet = std::string("Greeting.") + e.key;
+				obs_data_set_string(settings, "texte_arabe", e.arabic);
+				obs_data_set_string(settings, "titre", obs_module_text(greet.c_str()));
+			}
+		}
+		const QString name = UniqueName(T("Name.EventBackground"));
+		OBSSourceAutoRelease source = obs_source_create(GRAPHIC_ID, name.toUtf8().constData(), settings, nullptr);
+		if (!source) {
+			status->setText(T("Error.NoGraphics"));
+			return;
+		}
+		obs_sceneitem_t *item = obs_scene_add(scene, source);
+		if (item) {
+			obs_sceneitem_set_order(item, OBS_ORDER_MOVE_BOTTOM);
+		}
+		status->setText(T("Status.Added").arg(name));
+		obs_frontend_open_source_properties(source);
+	}
+
+	void createIntroScene()
+	{
+		const QString sceneName = UniqueName(T("Name.IntroScene"));
+		OBSSceneAutoRelease scene = obs_scene_create(sceneName.toUtf8().constData());
+		if (!scene) {
+			status->setText(T("Error.NoScene"));
+			return;
+		}
+		const Theme t = theme();
+		SetGlobalTheme(&t);
+		OBSDataAutoRelease settings = t.toSettings(true);
+		obs_data_set_string(settings, "modele", "intro");
+		obs_data_set_string(settings, "style_intro", introStyle->currentData().toString().toUtf8().constData());
+		obs_data_set_int(settings, "duree_intro", introDuration->value());
+		obs_data_set_string(settings, "scene_suivante", nextScene->currentData().toString().toUtf8().constData());
+		obs_data_set_string(settings, "fond_evenement",
+				    eventCombo->currentData().toString().toUtf8().constData());
+		obs_data_set_string(settings, "texte_arabe", "");
+		const QString name = UniqueName(T("Name.Intro"));
+		OBSSourceAutoRelease source = obs_source_create(GRAPHIC_ID, name.toUtf8().constData(), settings, nullptr);
+		if (!source) {
+			status->setText(T("Error.NoGraphics"));
+			return;
+		}
+		obs_scene_add(scene, source);
+		introSceneName = sceneName;
+		status->setText(T("Status.IntroCreated").arg(sceneName));
+		obs_frontend_open_source_properties(source);
+	}
+
+	/* Scène d'intro à enregistrer : la dernière créée, sinon la première qui contient une intro */
+	OBSSource findIntroScene(OBSSource &introSource)
+	{
+		OBSSource found;
+		obs_frontend_source_list scenes = {};
+		obs_frontend_get_scenes(&scenes);
+		for (size_t i = 0; i < scenes.sources.num && !found; i++) {
+			obs_source_t *sceneSource = scenes.sources.array[i];
+			if (!introSceneName.isEmpty() &&
+			    introSceneName != QString::fromUtf8(obs_source_get_name(sceneSource))) {
+				continue;
+			}
+			struct Search {
+				obs_source_t *intro = nullptr;
+			} search;
+			obs_scene_enum_items(
+				obs_scene_from_source(sceneSource),
+				[](obs_scene_t *, obs_sceneitem_t *item, void *param) {
+					obs_source_t *s = obs_sceneitem_get_source(item);
+					const char *id = obs_source_get_unversioned_id(s);
+					if (id && strcmp(id, GRAPHIC_ID) == 0) {
+						OBSDataAutoRelease st = obs_source_get_settings(s);
+						if (strcmp(obs_data_get_string(st, "modele"), "intro") == 0) {
+							static_cast<Search *>(param)->intro = s;
+							return false;
+						}
+					}
+					return true;
+				},
+				&search);
+			if (search.intro) {
+				found = sceneSource;
+				introSource = search.intro;
+			}
+		}
+		obs_frontend_source_list_free(&scenes);
+		return found;
+	}
+
+	void recordIntro()
+	{
+		if (obs_frontend_recording_active()) {
+			status->setText(T("Error.AlreadyRecording"));
+			return;
+		}
+		OBSSource intro;
+		OBSSource scene = findIntroScene(intro);
+		if (!scene && !introSceneName.isEmpty()) {
+			introSceneName.clear();
+			scene = findIntroScene(intro);
+		}
+		if (!scene) {
+			status->setText(T("Error.NoIntro"));
+			return;
+		}
+		recordingIntro = intro;
+		ShowOnProgram(scene);
+		recordButton->setEnabled(false);
+		status->setText(T("Status.Recording"));
+		obs_frontend_recording_start();
+	}
+
+public:
+	/* Enregistrement démarré : l'intro repart du début, puis l'enregistrement s'arrête à la fin */
+	void recordingStarted()
+	{
+		OBSSource intro = recordingIntro;
+		if (!intro) {
+			return;
+		}
+		OBSDataAutoRelease restart = obs_data_create();
+		obs_data_set_int(restart, "relance", (long long)(os_gettime_ns() / 1000000) % 1000000);
+		obs_source_update(intro, restart);
+		OBSDataAutoRelease settings = obs_source_get_settings(intro);
+		const int ms = (int)obs_data_get_int(settings, "duree_intro") * 1000 + 900;
+		QTimer::singleShot(ms, this, [] {
+			if (obs_frontend_recording_active()) {
+				obs_frontend_recording_stop();
+			}
+		});
+	}
+
+	void recordingStopped()
+	{
+		if (!recordingIntro) {
+			return;
+		}
+		recordingIntro = nullptr;
+		recordButton->setEnabled(true);
+		char *file = obs_frontend_get_last_recording();
+		status->setText(T("Status.Recorded").arg(QString::fromUtf8(file ? file : "")));
+		bfree(file);
+	}
+
+private:
 	/* ---------- Thèmes de l'utilisateur ---------- */
 
 	static QString ThemesPath()
@@ -840,6 +1119,13 @@ private:
 	QPushButton *deleteButton = nullptr;
 	QLabel *status = nullptr;
 	VideoSourceCombo *cameraCombo = nullptr;
+	QComboBox *eventCombo = nullptr;
+	QComboBox *introStyle = nullptr;
+	QSpinBox *introDuration = nullptr;
+	SceneCombo *nextScene = nullptr;
+	QPushButton *recordButton = nullptr;
+	QString introSceneName;
+	OBSSource recordingIntro;
 	std::vector<Theme> customThemes;
 };
 
@@ -881,8 +1167,48 @@ void ShowDockOnFirstRun()
 	config_save_safe(config, "tmp", nullptr);
 }
 
+/* Intro : à la fin, passage automatique à la scène choisie */
+void IntroActivated(void *, calldata_t *cd)
+{
+	obs_source_t *source = static_cast<obs_source_t *>(calldata_ptr(cd, "source"));
+	const char *id = source ? obs_source_get_unversioned_id(source) : nullptr;
+	if (!id || strcmp(id, GRAPHIC_ID) != 0) {
+		return;
+	}
+	OBSDataAutoRelease settings = obs_source_get_settings(source);
+	if (strcmp(obs_data_get_string(settings, "modele"), "intro") != 0) {
+		return;
+	}
+	const QString next = QString::fromUtf8(obs_data_get_string(settings, "scene_suivante"));
+	if (next.isEmpty() || !dockWidget) {
+		return;
+	}
+	const int ms = (int)obs_data_get_int(settings, "duree_intro") * 1000;
+	OBSWeakSource weak = OBSGetWeakRef(source);
+	QMetaObject::invokeMethod(
+		dockWidget,
+		[weak, next, ms] {
+			QTimer::singleShot(ms, dockWidget, [weak, next] {
+				OBSSource intro = OBSGetStrongRef(weak);
+				if (!intro || !obs_source_active(intro)) {
+					return; /* l'intro n'est plus à l'antenne : ne rien faire */
+				}
+				OBSSourceAutoRelease scene = obs_get_source_by_name(next.toUtf8().constData());
+				if (scene && obs_scene_from_source(scene)) {
+					ShowOnProgram(scene);
+				}
+			});
+		},
+		Qt::QueuedConnection);
+}
+
 void FrontendEvent(enum obs_frontend_event event, void *)
 {
+	if (event == OBS_FRONTEND_EVENT_RECORDING_STARTED && dockWidget) {
+		dockWidget->recordingStarted();
+	} else if (event == OBS_FRONTEND_EVENT_RECORDING_STOPPED && dockWidget) {
+		dockWidget->recordingStopped();
+	}
 	if (event == OBS_FRONTEND_EVENT_FINISHED_LOADING) {
 		ShowDockOnFirstRun();
 	} else if (event == OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP) {
@@ -907,6 +1233,7 @@ bool obs_module_load(void)
 		return false;
 	}
 	SetGlobalTheme(nullptr);
+	signal_handler_connect(obs_get_signal_handler(), "source_activate", IntroActivated, nullptr);
 	obs_frontend_add_save_callback(SaveCallback, nullptr);
 	obs_frontend_add_event_callback(FrontendEvent, nullptr);
 	blog(LOG_INFO, "[amal-habillage] Studio graphique chargé");
@@ -915,6 +1242,7 @@ bool obs_module_load(void)
 
 void obs_module_unload(void)
 {
+	signal_handler_disconnect(obs_get_signal_handler(), "source_activate", IntroActivated, nullptr);
 	obs_frontend_remove_event_callback(FrontendEvent, nullptr);
 	obs_frontend_remove_save_callback(SaveCallback, nullptr);
 }

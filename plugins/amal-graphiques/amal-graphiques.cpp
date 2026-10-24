@@ -207,6 +207,11 @@ std::string BuildUrl(AmalGraphic *g, obs_data_t *settings)
 			obs_data_set_string(data, key, LocalFileUrl(file).c_str());
 		}
 	}
+	/* Fond d'événement et intro */
+	obs_data_set_string(data, "fevt", obs_data_get_string(settings, "fond_evenement"));
+	obs_data_set_bool(data, "greet", obs_data_get_bool(settings, "salutation"));
+	obs_data_set_string(data, "istyle", obs_data_get_string(settings, "style_intro"));
+	obs_data_set_int(data, "idur", obs_data_get_int(settings, "duree_intro"));
 	/* Cadre d'événement */
 	obs_data_set_string(data, "evt", obs_data_get_string(settings, "disposition_evt"));
 	obs_data_set_string(data, "edate", obs_data_get_string(settings, "date_evt"));
@@ -225,7 +230,8 @@ std::string BuildUrl(AmalGraphic *g, obs_data_t *settings)
 	}
 
 	/* Change l'adresse pour rejouer l'animation à la demande */
-	obs_data_set_int(data, "n", g->replay);
+	/* « relance » : modifié par le Studio graphique pour rejouer l'intro au début d'un enregistrement */
+	obs_data_set_int(data, "n", (long long)g->replay + obs_data_get_int(settings, "relance"));
 
 	const std::string json = obs_data_get_json(data);
 	obs_data_release(data);
@@ -274,14 +280,16 @@ bool TemplateModified(obs_properties_t *props, obs_property_t *, obs_data_t *set
 	const bool background = t == "fond";
 	const bool frames = t == "cadres";
 	const bool event = t == "evenement";
-	const bool decor = background || frames || event;
+	const bool intro = t == "intro";
+	const bool greeting = background && obs_data_get_bool(settings, "salutation");
+	const bool decor = background || frames || event || intro;
 
 	obs_property_set_visible(obs_properties_get(props, "libelle"), panel || ticker || tv || event);
-	obs_property_set_visible(obs_properties_get(props, "texte_arabe"), panel || speaker || title);
+	obs_property_set_visible(obs_properties_get(props, "texte_arabe"), panel || speaker || title || greeting || intro);
 	obs_property_set_visible(obs_properties_get(props, "texte"), panel || ticker || tv || event);
 	obs_property_set_visible(obs_properties_get(props, "reference"), panel || title);
-	obs_property_set_visible(obs_properties_get(props, "titre"), speaker || title || tv || event);
-	obs_property_set_visible(obs_properties_get(props, "sous_titre"), speaker || title || tv || event);
+	obs_property_set_visible(obs_properties_get(props, "titre"), speaker || title || tv || event || greeting || intro);
+	obs_property_set_visible(obs_properties_get(props, "sous_titre"), speaker || title || tv || event || intro);
 	obs_property_set_visible(obs_properties_get(props, "vitesse"), ticker || tv);
 	obs_property_set_visible(obs_properties_get(props, "position"), !speaker && !tv && !decor);
 	obs_property_set_visible(obs_properties_get(props, "animation"), !decor);
@@ -296,7 +304,12 @@ bool TemplateModified(obs_properties_t *props, obs_property_t *, obs_data_t *set
 				 "libelle_bande"}) {
 		obs_property_set_visible(obs_properties_get(props, name), tv);
 	}
-	obs_property_set_visible(obs_properties_get(props, "logo"), tv || event);
+	obs_property_set_visible(obs_properties_get(props, "logo"), tv || event || intro);
+	obs_property_set_visible(obs_properties_get(props, "fond_evenement"), background || intro);
+	obs_property_set_visible(obs_properties_get(props, "salutation"), background);
+	for (const char *name : {"style_intro", "duree_intro", "scene_suivante", "aide_intro"}) {
+		obs_property_set_visible(obs_properties_get(props, name), intro);
+	}
 	for (const char *name : {"disposition_evt", "date_evt", "lieu_evt", "logo2", "visuel", "aide_evt"}) {
 		obs_property_set_visible(obs_properties_get(props, name), event);
 	}
@@ -305,7 +318,15 @@ bool TemplateModified(obs_properties_t *props, obs_property_t *, obs_data_t *set
 
 	/* Libellés qui changent de sens selon le modèle */
 	obs_property_set_description(obs_properties_get(props, "titre"),
-				     obs_module_text(tv ? "BannerTitle" : event ? "Event.Title" : "TitleField"));
+				     obs_module_text(tv	      ? "BannerTitle"
+						     : event  ? "Event.Title"
+						     : intro  ? "Intro.Title"
+						     : background ? "Greeting.French"
+								  : "TitleField"));
+	obs_property_set_description(obs_properties_get(props, "texte_arabe"),
+				     obs_module_text(background ? "Greeting.Arabic"
+						     : intro	? "Intro.Arabic"
+								: "ArabicText"));
 	obs_property_set_description(obs_properties_get(props, "sous_titre"),
 				     obs_module_text(tv ? "BannerSubtitle" : event ? "Event.Subtitle" : "Subtitle"));
 	obs_property_set_description(obs_properties_get(props, "libelle"),
@@ -342,6 +363,7 @@ obs_properties_t *GetProperties(void *data)
 	obs_property_list_add_string(list, obs_module_text("Template.Background"), "fond");
 	obs_property_list_add_string(list, obs_module_text("Template.Frames"), "cadres");
 	obs_property_list_add_string(list, obs_module_text("Template.Event"), "evenement");
+	obs_property_list_add_string(list, obs_module_text("Template.Intro"), "intro");
 	obs_property_set_modified_callback(list, TemplateModified);
 
 	obs_properties_add_text(props, "libelle", obs_module_text("Label"), OBS_TEXT_DEFAULT);
@@ -369,6 +391,37 @@ obs_properties_t *GetProperties(void *data)
 				"Images (*.png *.jpg *.jpeg *.webp *.svg *.gif)", nullptr);
 	obs_properties_add_bool(props, "bande", obs_module_text("ShowBand"));
 	obs_properties_add_text(props, "libelle_bande", obs_module_text("BandLabel"), OBS_TEXT_DEFAULT);
+
+	/* Fond d'événement (et décor de l'intro) */
+	obs_property_t *eventBg = obs_properties_add_list(props, "fond_evenement", obs_module_text("EventBg"),
+							  OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	for (const char *key : {"", "ramadan", "laylat", "aid-fitr", "aid-adha", "hajj", "hegire", "achoura", "maouloud",
+				"isra", "jumua"}) {
+		const std::string text = std::string("EventBg.") + (*key ? key : "none");
+		obs_property_list_add_string(eventBg, obs_module_text(text.c_str()), key);
+	}
+	obs_property_t *greet = obs_properties_add_bool(props, "salutation", obs_module_text("Greeting"));
+	obs_property_set_modified_callback(greet, TemplateModified);
+
+	/* Intro vidéo */
+	obs_property_t *introStyle = obs_properties_add_list(props, "style_intro", obs_module_text("Intro.Style"),
+							     OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(introStyle, obs_module_text("Intro.Style.Star"), "etoile");
+	obs_property_list_add_string(introStyle, obs_module_text("Intro.Style.Arches"), "arches");
+	obs_property_list_add_string(introStyle, obs_module_text("Intro.Style.Light"), "lumiere");
+	obs_property_t *introTime = obs_properties_add_int(props, "duree_intro", obs_module_text("Intro.Duration"), 3, 30, 1);
+	obs_property_int_set_suffix(introTime, " s");
+	obs_property_t *nextScene = obs_properties_add_list(props, "scene_suivante", obs_module_text("Intro.NextScene"),
+							    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(nextScene, obs_module_text("Intro.NextScene.None"), "");
+	obs_enum_scenes(
+		[](void *param, obs_source_t *scene) {
+			const char *name = obs_source_get_name(scene);
+			obs_property_list_add_string(static_cast<obs_property_t *>(param), name, name);
+			return true;
+		},
+		nextScene);
+	obs_properties_add_text(props, "aide_intro", obs_module_text("Intro.Help"), OBS_TEXT_INFO);
 
 	/* Cadre d'événement */
 	obs_property_t *evt = obs_properties_add_list(props, "disposition_evt", obs_module_text("Event.Layout"),
@@ -463,6 +516,9 @@ void GetDefaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, "style_cadre", "fine");
 	obs_data_set_default_string(settings, "habillage", "classique");
 	obs_data_set_default_string(settings, "disposition_evt", "cadre");
+	obs_data_set_default_bool(settings, "salutation", false);
+	obs_data_set_default_string(settings, "style_intro", "etoile");
+	obs_data_set_default_int(settings, "duree_intro", 8);
 	obs_data_set_default_bool(settings, "motif", true);
 }
 
