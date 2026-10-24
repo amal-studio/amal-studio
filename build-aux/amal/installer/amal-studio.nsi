@@ -10,7 +10,7 @@ RequestExecutionLevel admin
 ManifestDPIAware true
 
 !ifndef APP_VERSION
-  !define APP_VERSION "0.6.0"
+  !define APP_VERSION "0.7.0"
 !endif
 !ifndef SOURCE_DIR
   !error "SOURCE_DIR doit pointer vers le dossier install produit par la compilation"
@@ -90,6 +90,10 @@ Section "Amal Studio" SecMain
   ; équivalent du réglage Windows Paramètres > Écran > Graphiques.
   WriteRegStr HKCU "Software\Microsoft\DirectX\UserGpuPreferences" "$INSTDIR\${APP_EXE}" "GpuPreference=2;"
 
+  ; Réception de la caméra du téléphone (SRT) : autoriser Amal Studio sur les réseaux privés
+  nsExec::Exec 'netsh advfirewall firewall delete rule name="Amal Studio"'
+  nsExec::Exec 'netsh advfirewall firewall add rule name="Amal Studio" dir=in action=allow program="$INSTDIR\${APP_EXE}" enable=yes profile=private'
+
   WriteUninstaller "$INSTDIR\uninstall.exe"
   WriteRegStr HKLM "Software\Amal Studio" "InstallDir" "$INSTDIR"
   WriteRegStr HKLM "${UNINSTALL_KEY}" "DisplayName" "Amal Studio"
@@ -114,6 +118,7 @@ Section "Uninstall"
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR"
   DeleteRegValue HKCU "Software\Microsoft\DirectX\UserGpuPreferences" "$INSTDIR\${APP_EXE}"
+  nsExec::Exec 'netsh advfirewall firewall delete rule name="Amal Studio"'
   DeleteRegKey HKLM "${UNINSTALL_KEY}"
   DeleteRegKey HKLM "Software\Amal Studio"
 SectionEnd

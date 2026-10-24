@@ -41,6 +41,7 @@ add_obs_plugin(amal-coran PLATFORMS WINDOWS MACOS LINUX)
 add_obs_plugin(amal-dispositions PLATFORMS WINDOWS MACOS LINUX)
 add_obs_plugin(amal-graphiques PLATFORMS WINDOWS MACOS LINUX)
 add_obs_plugin(amal-projets PLATFORMS WINDOWS MACOS LINUX)
+add_obs_plugin(amal-telephone PLATFORMS WINDOWS MACOS LINUX)
 add_obs_plugin(amal-transitions PLATFORMS WINDOWS MACOS LINUX)
 add_obs_plugin(coreaudio-encoder PLATFORMS WINDOWS MACOS)
 add_obs_plugin(
