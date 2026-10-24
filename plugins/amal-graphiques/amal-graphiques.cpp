@@ -185,6 +185,8 @@ std::string BuildUrl(AmalGraphic *g, obs_data_t *settings)
 	obs_data_set_int(data, "dur", obs_data_get_int(settings, "duree"));
 	obs_data_set_int(data, "speed", obs_data_get_int(settings, "vitesse"));
 	obs_data_set_double(data, "scale", (double)obs_data_get_int(settings, "taille") / 100.0);
+	obs_data_set_int(data, "maxh", obs_data_get_int(settings, "hauteur_max"));
+	obs_data_set_int(data, "page", obs_data_get_int(settings, "duree_page"));
 	obs_data_set_string(data, "primary", ColorToHex(obs_data_get_int(settings, "couleur_principale")).c_str());
 	obs_data_set_string(data, "accent", ColorToHex(obs_data_get_int(settings, "couleur_accent")).c_str());
 	obs_data_set_string(data, "text", ColorToHex(obs_data_get_int(settings, "couleur_texte")).c_str());
@@ -279,6 +281,8 @@ bool TemplateModified(obs_properties_t *props, obs_property_t *, obs_data_t *set
 	obs_property_set_visible(obs_properties_get(props, "taille"), !tv && !decor);
 	obs_property_set_visible(obs_properties_get(props, "rejouer"), !decor);
 	obs_property_set_visible(obs_properties_get(props, "couleur_texte"), !background);
+	obs_property_set_visible(obs_properties_get(props, "hauteur_max"), panel);
+	obs_property_set_visible(obs_properties_get(props, "duree_page"), panel);
 
 	for (const char *name : {"format_date", "decalage_hegire", "horloge", "badge_direct", "info", "logo", "bande",
 				 "libelle_bande"}) {
@@ -384,6 +388,15 @@ obs_properties_t *GetProperties(void *data)
 	obs_property_t *size = obs_properties_add_int_slider(props, "taille", obs_module_text("Size"), 30, 200, 5);
 	obs_property_int_set_suffix(size, " %");
 
+	/* Textes longs : hauteur maximale du panneau, puis pages qui défilent */
+	obs_property_t *maxHeight =
+		obs_properties_add_int_slider(props, "hauteur_max", obs_module_text("MaxHeight"), 25, 90, 5);
+	obs_property_int_set_suffix(maxHeight, obs_module_text("MaxHeight.Suffix"));
+	obs_property_set_long_description(maxHeight, obs_module_text("MaxHeight.Help"));
+	obs_property_t *pageTime = obs_properties_add_int(props, "duree_page", obs_module_text("PageTime"), 3, 60, 1);
+	obs_property_int_set_suffix(pageTime, " s");
+	obs_property_set_long_description(pageTime, obs_module_text("PageTime.Help"));
+
 	obs_property_t *look = obs_properties_add_list(props, "habillage", obs_module_text("Look"),
 						       OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(look, obs_module_text("Look.Classic"), "classique");
@@ -411,6 +424,8 @@ void GetDefaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "duree", 0);
 	obs_data_set_default_int(settings, "vitesse", 140);
 	obs_data_set_default_int(settings, "taille", 100);
+	obs_data_set_default_int(settings, "hauteur_max", 40);
+	obs_data_set_default_int(settings, "duree_page", 8);
 	obs_data_set_default_int(settings, "couleur_principale", 0xFF4F6B0B); /* #0B6B4F */
 	obs_data_set_default_int(settings, "couleur_accent", 0xFF37AFD4);     /* #D4AF37 */
 	obs_data_set_default_int(settings, "couleur_texte", 0xFFFFFFFF);      /* #FFFFFF */

@@ -52,12 +52,15 @@
 	}
 
 	/* Verset, hadith, invocation, rappel : même panneau, libellé différent */
-	function buildPanel(d) {
+	function buildPanel(d, page) {
 		var card = el('div', 'card panel');
 		var label = str(d.label) || LABELS[d.t] || '';
-		var ar = str(d.ar);
-		var fr = str(d.fr);
+		var ar = page ? page.ar : str(d.ar);
+		var fr = page ? page.fr : str(d.fr);
 		var ref = str(d.ref);
+		if (page && page.total > 1) {
+			card.appendChild(el('div', 'pager', page.index + ' / ' + page.total));
+		}
 
 		if (label) {
 			card.appendChild(el('div', 'label', label));
@@ -259,27 +262,82 @@
 		return wrap;
 	}
 
-	function fitPanel(card) {
-		var arabicText = card.querySelector('.arabic');
-		var translation = card.querySelector('.translation');
-		var limit = window.innerHeight * 0.9;
-		for (var i = 0; i < 40 && card.getBoundingClientRect().height > limit; i++) {
-			if (arabicText) {
-				var size = parseFloat(getComputedStyle(arabicText).fontSize);
-				if (size <= 26) break;
-				arabicText.style.fontSize = (size * 0.92) + 'px';
+	/* ------------------------------------------------------------------ */
+	/* Textes longs : le panneau ne doit jamais cacher les intervenants.     */
+	/* 1) panneau élargi et texte un peu plus petit ;                       */
+	/* 2) si c'est encore trop haut, le texte est découpé en pages qui      */
+	/*    défilent (1/3, 2/3…). Le texte reste complet et inchangé.          */
+
+	var LONG_TEXT = 220;
+	var MAX_PAGES = 15;
+
+	/* Découpe en n morceaux de longueurs proches, sans couper les mots */
+	function splitWords(text, n) {
+		var words = text.split(/\s+/).filter(Boolean);
+		if (n <= 1 || words.length <= 1) return [text];
+		var total = text.length;
+		var chunks = [];
+		var current = [];
+		var length = 0;
+		words.forEach(function (w) {
+			var target = total * (chunks.length + 1) / n;
+			if (current.length && chunks.length < n - 1 && length + w.length / 2 > target) {
+				chunks.push(current.join(' '));
+				current = [];
 			}
-			if (translation) {
-				var tsize = parseFloat(getComputedStyle(translation).fontSize);
-				if (tsize > 20) translation.style.fontSize = (tsize * 0.94) + 'px';
-			}
-		}
-		/* Dans tous les cas, ne jamais déborder de l'image */
-		var rect = card.getBoundingClientRect();
-		if (rect.height > limit) {
-			card.style.scale = String(Math.max(0.3, limit / rect.height) * (Number(getComputedStyle(document.documentElement).getPropertyValue('--scale')) || 1));
-		}
+			current.push(w);
+			length += w.length + 1;
+		});
+		chunks.push(current.join(' '));
+		while (chunks.length < n) chunks.push('');
+		return chunks;
 	}
+
+	function currentScale() {
+		return Number(getComputedStyle(document.documentElement).getPropertyValue('--scale')) || 1;
+	}
+
+	function buildPanelPages(d, stage) {
+		var ar = str(d.ar);
+		var fr = str(d.fr);
+		var ratio = Math.max(25, Math.min(90, Number(d.maxh) || 40)) / 100;
+		var limit = 1080 * ratio;
+		var large = ar.length + fr.length > LONG_TEXT;
+
+		function make(n, i, arParts, frParts) {
+			var card = buildPanel(d, { ar: arParts[i], fr: frParts[i], index: i + 1, total: n });
+			if (large) card.classList.add('large');
+			return card;
+		}
+
+		for (var n = 1; n <= MAX_PAGES; n++) {
+			var arParts = splitWords(ar, n);
+			var frParts = splitWords(fr, n);
+			var pages = [];
+			var fits = true;
+			for (var i = 0; i < n; i++) {
+				var card = make(n, i, arParts, frParts);
+				card.style.visibility = 'hidden';
+				stage.appendChild(card);
+				if (card.offsetHeight * currentScale() > limit) fits = false;
+				stage.removeChild(card);
+				card.style.visibility = '';
+				pages.push(card);
+				if (!fits) break;
+			}
+			if (fits) return pages;
+		}
+
+		/* Cas extrême (mot unique gigantesque) : réduire jusqu'à tenir */
+		var last = make(1, 0, [ar], [fr]);
+		stage.appendChild(last);
+		var h = last.offsetHeight * currentScale();
+		stage.removeChild(last);
+		if (h > limit) last.style.scale = String(Math.max(0.3, limit / h) * currentScale());
+		return [last];
+	}
+
+	var pageTimer = null;
 
 	/* ------------------------------------------------------------------ */
 	/* Transition Amal (jouée sur ordre d'Amal Studio)                      */
@@ -357,7 +415,13 @@
 			clockTimer = null;
 		}
 
+		if (pageTimer) {
+			window.clearInterval(pageTimer);
+			pageTimer = null;
+		}
+
 		var card;
+		var pages = null;
 		if (template === 'intervenant') card = buildSpeaker(d);
 		else if (template === 'titre') card = buildTitle(d);
 		else if (template === 'bandeau') card = buildTicker(d);
@@ -365,7 +429,10 @@
 		else if (template === 'fond') card = buildBackground(d);
 		else if (template === 'cadres') card = buildFrames(d);
 		else if (template === 'transition') card = buildTransition(d);
-		else card = buildPanel(d);
+		else {
+			pages = buildPanelPages(d, stage);
+			card = pages[0];
+		}
 
 		/* Le fond et les cadres sont des éléments fixes : ni animation, ni durée */
 		if (template === 'fond' || template === 'cadres' || template === 'transition') {
@@ -380,16 +447,31 @@
 			applyTicker(card, d);
 		}
 
-		/* Longs versets : réduire le texte jusqu'à ce que le panneau tienne dans l'image */
-		if (card.classList.contains('panel')) {
-			fitPanel(card);
+		/* Texte en plusieurs pages : elles défilent automatiquement */
+		if (pages && pages.length > 1) {
+			var pageIndex = 0;
+			var pageSeconds = Math.max(3, Math.min(60, Number(d.page) || 8));
+			pageTimer = window.setInterval(function () {
+				pageIndex = (pageIndex + 1) % pages.length;
+				var next = pages[pageIndex];
+				next.classList.remove('enter', 'leave', 'page-in');
+				next.classList.add('anim-' + animation);
+				void next.offsetWidth;
+				next.classList.add('page-in');
+				stage.replaceChild(next, card);
+				card = next;
+			}, pageSeconds * 1000);
 		}
 
 		/* Durée d'affichage (secondes) : 0 = reste affiché */
 		var duration = Number(d.dur) || 0;
 		if (duration > 0) {
 			window.setTimeout(function () {
-				card.classList.remove('enter');
+				if (pageTimer) {
+					window.clearInterval(pageTimer);
+					pageTimer = null;
+				}
+				card.classList.remove('enter', 'page-in');
 				card.classList.add('leave');
 			}, duration * 1000);
 		}

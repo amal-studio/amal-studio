@@ -593,3 +593,31 @@ html.look-verre .title-card {
 }
 html.look-verre .speaker { border-radius: 18px; }
 html.look-verre .fond { background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--primary) 70%, white 15%) 0%, color-mix(in srgb, var(--primary) 40%, black) 90%); }
+
+/* ================================================================== */
+/* Textes longs : panneau élargi, pages qui défilent                   */
+
+.panel.large { width: 1800px; padding: 30px 64px 26px; }
+.panel.large .arabic { font-size: 54px; line-height: 1.7; margin-bottom: 16px; }
+.panel.large .arabic.quran { font-size: 60px; line-height: 1.85; }
+.panel.large .translation { font-size: 30px; }
+.panel.large .translation.main { font-size: 34px; }
+.panel.large .label { margin-bottom: 10px; }
+.panel.large .divider { margin: 14px auto 10px; }
+
+.pager {
+	position: absolute;
+	top: 14px;
+	right: 22px;
+	padding: 2px 12px;
+	border-radius: 999px;
+	background: rgba(0, 0, 0, 0.30);
+	color: var(--accent);
+	font-size: 20px;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+html.look-epure .pager { background: rgba(0, 0, 0, 0.06); color: var(--primary); }
+
+.page-in { animation: page-in 0.6s ease-out both; }
+@keyframes page-in { from { opacity: 0; } to { opacity: 1; } }

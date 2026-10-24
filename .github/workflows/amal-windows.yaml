@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  AMAL_VERSION: 0.9.0
+  AMAL_VERSION: 0.9.1
 
 jobs:
   windows-x64:
