@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <mutex>
 #include <string>
 
 OBS_DECLARE_MODULE()
@@ -44,6 +45,51 @@ constexpr const char *BASMALA = "\xD8\xA8\xD9\x90\xD8\xB3\xD9\x92\xD9\x85\xD9\x9
 				"\xD9\x87\xD9\x90 \xD9\xB1\xD9\x84\xD8\xB1\xD9\x91\xD9\x8E\xD8\xAD\xD9\x92\xD9\x85\xD9\x8E"
 				"\xD9\xB0\xD9\x86\xD9\x90 \xD9\xB1\xD9\x84\xD8\xB1\xD9\x91\xD9\x8E\xD8\xAD\xD9\x90\xD9\x8A"
 				"\xD9\x85\xD9\x90";
+
+/* Thème du projet (Studio graphique) : appliqué aux nouveaux habillages qui
+   n'ont pas encore de couleurs choisies. Vide = couleurs par défaut. */
+std::mutex themeMutex;
+std::string themeJson;
+
+void ApplyTheme(obs_data_t *settings)
+{
+	std::string json;
+	{
+		std::lock_guard<std::mutex> lock(themeMutex);
+		json = themeJson;
+	}
+	if (json.empty()) {
+		return;
+	}
+	obs_data_t *theme = obs_data_create_from_json(json.c_str());
+	if (!theme) {
+		return;
+	}
+	for (const char *key : {"couleur_principale", "couleur_accent", "couleur_texte"}) {
+		if (obs_data_has_user_value(theme, key) && !obs_data_has_user_value(settings, key)) {
+			obs_data_set_int(settings, key, obs_data_get_int(theme, key));
+		}
+	}
+	if (obs_data_has_user_value(theme, "habillage") && !obs_data_has_user_value(settings, "habillage")) {
+		obs_data_set_string(settings, "habillage", obs_data_get_string(theme, "habillage"));
+	}
+	if (obs_data_has_user_value(theme, "motif") && !obs_data_has_user_value(settings, "motif")) {
+		obs_data_set_bool(settings, "motif", obs_data_get_bool(theme, "motif"));
+	}
+	const char *logo = obs_data_get_string(theme, "logo");
+	if (logo && *logo && !obs_data_has_user_value(settings, "logo")) {
+		obs_data_set_string(settings, "logo", logo);
+	}
+	obs_data_release(theme);
+}
+
+/* Appelé par le Studio graphique : « void amal_theme_definir(in string json) » */
+void ProcSetTheme(void *, calldata_t *cd)
+{
+	const char *json = calldata_string(cd, "json");
+	std::lock_guard<std::mutex> lock(themeMutex);
+	themeJson = json ? json : "";
+}
 
 struct AmalGraphic {
 	obs_source_t *source = nullptr;
@@ -142,6 +188,8 @@ std::string BuildUrl(AmalGraphic *g, obs_data_t *settings)
 	obs_data_set_string(data, "primary", ColorToHex(obs_data_get_int(settings, "couleur_principale")).c_str());
 	obs_data_set_string(data, "accent", ColorToHex(obs_data_get_int(settings, "couleur_accent")).c_str());
 	obs_data_set_string(data, "text", ColorToHex(obs_data_get_int(settings, "couleur_texte")).c_str());
+	obs_data_set_string(data, "look", obs_data_get_string(settings, "habillage"));
+	obs_data_set_bool(data, "motif", obs_data_get_bool(settings, "motif"));
 	/* Bandeau TV */
 	obs_data_set_string(data, "date", obs_data_get_string(settings, "format_date"));
 	obs_data_set_int(data, "hijri", obs_data_get_int(settings, "decalage_hegire"));
@@ -336,6 +384,14 @@ obs_properties_t *GetProperties(void *data)
 	obs_property_t *size = obs_properties_add_int_slider(props, "taille", obs_module_text("Size"), 30, 200, 5);
 	obs_property_int_set_suffix(size, " %");
 
+	obs_property_t *look = obs_properties_add_list(props, "habillage", obs_module_text("Look"),
+						       OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(look, obs_module_text("Look.Classic"), "classique");
+	obs_property_list_add_string(look, obs_module_text("Look.Modern"), "moderne");
+	obs_property_list_add_string(look, obs_module_text("Look.Light"), "epure");
+	obs_property_list_add_string(look, obs_module_text("Look.Glass"), "verre");
+	obs_properties_add_bool(props, "motif", obs_module_text("Pattern"));
+
 	obs_properties_add_color(props, "couleur_principale", obs_module_text("Color.Primary"));
 	obs_properties_add_color(props, "couleur_accent", obs_module_text("Color.Accent"));
 	obs_properties_add_color(props, "couleur_texte", obs_module_text("Color.Text"));
@@ -364,6 +420,8 @@ void GetDefaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "badge_direct", true);
 	obs_data_set_default_bool(settings, "bande", false);
 	obs_data_set_default_string(settings, "style_cadre", "fine");
+	obs_data_set_default_string(settings, "habillage", "classique");
+	obs_data_set_default_bool(settings, "motif", true);
 }
 
 /* ------------------------------------------------------------------------ */
@@ -373,6 +431,7 @@ void *Create(obs_data_t *settings, obs_source_t *source)
 {
 	AmalGraphic *g = new AmalGraphic();
 	g->source = source;
+	ApplyTheme(settings);
 
 	g->browser = obs_source_create_private(BROWSER_ID, "amal-graphique-rendu", nullptr);
 	if (!g->browser) {
@@ -453,6 +512,7 @@ bool obs_module_load(void)
 	info.enum_all_sources = EnumSources;
 
 	obs_register_source(&info);
+	proc_handler_add(obs_get_proc_handler(), "void amal_theme_definir(in string json)", ProcSetTheme, nullptr);
 	blog(LOG_INFO, "[amal-graphiques] Source « Amal Graphique » disponible");
 	return true;
 }

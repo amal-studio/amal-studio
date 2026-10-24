@@ -337,6 +337,11 @@
 		if (/^#[0-9a-fA-F]{6}$/.test(d.primary || '')) root.setProperty('--primary', d.primary);
 		if (/^#[0-9a-fA-F]{6}$/.test(d.accent || '')) root.setProperty('--accent', d.accent);
 		if (/^#[0-9a-fA-F]{6}$/.test(d.text || '')) root.setProperty('--ink', d.text);
+		/* Style d'habillage et motif, choisis dans le Studio graphique */
+		var look = ['classique', 'moderne', 'epure', 'verre'].indexOf(d.look) >= 0 ? d.look : 'classique';
+		var html = document.documentElement;
+		html.className = 'look-' + look + (d.motif === false ? ' sans-motif' : '');
+
 		var scale = Number(d.scale);
 		if (scale >= 0.3 && scale <= 2) root.setProperty('--scale', String(scale));
 

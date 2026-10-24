@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  AMAL_VERSION: 0.8.0
+  AMAL_VERSION: 0.9.0
 
 jobs:
   windows-x64:
@@ -64,6 +64,7 @@ jobs:
                                'obs-plugins/64bit/amal-transitions.dll', 'data/obs-plugins/amal-transitions/locale/fr-FR.ini',
                                'obs-plugins/64bit/amal-telephone.dll', 'data/obs-plugins/amal-telephone/locale/fr-FR.ini',
                                'obs-plugins/64bit/amal-bibliotheque.dll', 'data/obs-plugins/amal-bibliotheque/locale/fr-FR.ini',
+                               'obs-plugins/64bit/amal-habillage.dll', 'data/obs-plugins/amal-habillage/locale/fr-FR.ini',
                                'data/obs-plugins/amal-bibliotheque/hadiths/ara-bukhari.min.json', 'data/obs-plugins/amal-bibliotheque/hadiths/ara-muslim.min.json',
                                'data/obs-plugins/amal-bibliotheque/hadiths/ara-abudawud.min.json', 'data/obs-plugins/amal-bibliotheque/hadiths/ara-tirmidhi.min.json',
                                'data/obs-plugins/amal-bibliotheque/hadiths/ara-nasai.min.json', 'data/obs-plugins/amal-bibliotheque/hadiths/ara-ibnmajah.min.json',
