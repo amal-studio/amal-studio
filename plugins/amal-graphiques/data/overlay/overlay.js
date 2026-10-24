@@ -281,6 +281,47 @@
 		}
 	}
 
+	/* ------------------------------------------------------------------ */
+	/* Transition Amal (jouée sur ordre d'Amal Studio)                      */
+
+	function buildTransition(d) {
+		var style = ['volet', 'rideau', 'logo'].indexOf(d.style) >= 0 ? d.style : 'volet';
+		var tr = el('div', 'tr style-' + style);
+		var duration = Math.max(400, Math.min(6000, Number(d.dur) || 1400));
+		tr.style.setProperty('--dur', duration + 'ms');
+
+		if (style === 'rideau') {
+			tr.appendChild(el('div', 'panneau haut'));
+			tr.appendChild(el('div', 'panneau bas'));
+		} else {
+			tr.appendChild(el('div', 'panneau'));
+		}
+
+		var centre = el('div', 'centre');
+		var logo = safeLogo(d.logo);
+		if (logo) {
+			centre.appendChild(el('img', '', '', { src: logo, alt: '' }));
+		} else {
+			centre.appendChild(el('div', 'etoile'));
+		}
+		if (str(d.fr)) {
+			centre.appendChild(el('div', 'texte', str(d.fr), { dir: 'auto' }));
+		}
+		tr.appendChild(centre);
+		return tr;
+	}
+
+	function playTransition() {
+		var tr = document.querySelector('.tr');
+		if (!tr) return;
+		tr.classList.remove('play');
+		void tr.offsetWidth; /* relance l'animation depuis le début */
+		tr.classList.add('play');
+	}
+
+	/* Amal Studio envoie cet évènement au début de chaque transition */
+	window.addEventListener('amalTransition', playTransition);
+
 	/* La mise en page est prévue pour 1920 x 1080 : on l'adapte à la taille réelle */
 	function fitToCanvas() {
 		var zoom = window.innerWidth / 1920;
@@ -318,10 +359,11 @@
 		else if (template === 'direct') card = buildBroadcast(d);
 		else if (template === 'fond') card = buildBackground(d);
 		else if (template === 'cadres') card = buildFrames(d);
+		else if (template === 'transition') card = buildTransition(d);
 		else card = buildPanel(d);
 
 		/* Le fond et les cadres sont des éléments fixes : ni animation, ni durée */
-		if (template === 'fond' || template === 'cadres') {
+		if (template === 'fond' || template === 'cadres' || template === 'transition') {
 			stage.appendChild(card);
 			return;
 		}

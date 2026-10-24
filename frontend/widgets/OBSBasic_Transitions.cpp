@@ -452,6 +452,27 @@ OBSSource OBSBasic::GetCurrentTransition()
 	return transition->second;
 }
 
+void OBSBasic::AmalAddTransition(const QString &id, const QString &name)
+{
+	const std::string transitionName = QT_TO_UTF8(name);
+	if (transitionName.empty() || FindTransition(transitionName.c_str())) {
+		return;
+	}
+
+	OBSSourceAutoRelease source = obs_source_create_private(QT_TO_UTF8(id), transitionName.c_str(), nullptr);
+	if (!source) {
+		return;
+	}
+	InitTransition(source);
+
+	const std::string uuid = obs_source_get_uuid(source);
+	transitions.insert({uuid, OBSSource(source.Get())});
+	transitionNameToUuids.insert({transitionName, uuid});
+	transitionUuids.push_back(uuid);
+
+	emit TransitionAdded(name, QString::fromStdString(uuid));
+}
+
 void OBSBasic::AddTransition(const char *id)
 {
 	std::string name;

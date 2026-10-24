@@ -402,3 +402,90 @@ html, body {
 	unicode-bidi: plaintext;
 	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
+
+/* ------------------------------------------------------------------ */
+/* Transition Amal : l'écran est entièrement couvert à mi-parcours,    */
+/* au moment précis où la scène change.                                */
+
+#stage.tpl-transition { display: block; }
+.tr { position: absolute; inset: 0; overflow: hidden; visibility: hidden; --dur: 1400ms; }
+.tr.play { visibility: visible; }
+.tr .panneau {
+	position: absolute;
+	background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--primary) 88%, white 10%) 0%, color-mix(in srgb, var(--primary) 60%, black) 85%);
+}
+.tr .panneau::before { content: ''; position: absolute; inset: 0; background-image: var(--pattern); opacity: 0.2; }
+.tr .centre {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 26px;
+	opacity: 0;
+}
+.tr .centre img { max-width: 520px; max-height: 360px; object-fit: contain; filter: drop-shadow(0 10px 30px rgba(0,0,0,0.5)); }
+.tr .centre .etoile {
+	width: 200px;
+	height: 200px;
+	background: var(--accent);
+	clip-path: polygon(50% 0%, 61% 26%, 85% 15%, 74% 39%, 100% 50%, 74% 61%, 85% 85%, 61% 74%, 50% 100%, 39% 74%, 15% 85%, 26% 61%, 0% 50%, 26% 39%, 15% 15%, 39% 26%);
+}
+.tr .centre .texte {
+	color: var(--accent);
+	font-size: 88px;
+	font-weight: 800;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	text-shadow: 0 6px 24px rgba(0,0,0,0.5);
+	unicode-bidi: plaintext;
+}
+.tr.play .centre { animation: tr-centre var(--dur) ease-in-out both; }
+@keyframes tr-centre {
+	0%, 30% { opacity: 0; transform: scale(0.82); }
+	45%, 58% { opacity: 1; transform: scale(1); }
+	72%, 100% { opacity: 0; transform: scale(1.08); }
+}
+
+/* Volet diagonal */
+.tr.style-volet .panneau {
+	top: -20%;
+	bottom: -20%;
+	left: -30%;
+	right: -30%;
+	transform: translateX(130%) skewX(-14deg);
+	border-left: 22px solid var(--accent);
+	border-right: 22px solid var(--accent);
+}
+.tr.style-volet.play .panneau { animation: tr-volet var(--dur) cubic-bezier(0.65, 0, 0.35, 1) both; }
+@keyframes tr-volet {
+	0% { transform: translateX(130%) skewX(-14deg); }
+	40%, 60% { transform: translateX(0) skewX(-14deg); }
+	100% { transform: translateX(-130%) skewX(-14deg); }
+}
+
+/* Rideau (haut et bas) */
+.tr.style-rideau .panneau { left: 0; right: 0; height: 52%; }
+.tr.style-rideau .panneau.haut { top: 0; border-bottom: 14px solid var(--accent); transform: translateY(-110%); }
+.tr.style-rideau .panneau.bas { bottom: 0; border-top: 14px solid var(--accent); transform: translateY(110%); }
+.tr.style-rideau.play .panneau.haut { animation: tr-haut var(--dur) cubic-bezier(0.65, 0, 0.35, 1) both; }
+.tr.style-rideau.play .panneau.bas { animation: tr-bas var(--dur) cubic-bezier(0.65, 0, 0.35, 1) both; }
+@keyframes tr-haut { 0% { transform: translateY(-110%); } 40%, 60% { transform: translateY(0); } 100% { transform: translateY(-110%); } }
+@keyframes tr-bas { 0% { transform: translateY(110%); } 40%, 60% { transform: translateY(0); } 100% { transform: translateY(110%); } }
+
+/* Logo qui s'ouvre en cercle */
+.tr.style-logo .panneau { inset: 0; clip-path: circle(0% at 50% 50%); }
+.tr.style-logo .panneau::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	box-shadow: inset 0 0 0 18px var(--accent);
+	border-radius: 50%;
+}
+.tr.style-logo.play .panneau { animation: tr-cercle var(--dur) cubic-bezier(0.65, 0, 0.35, 1) both; }
+@keyframes tr-cercle {
+	0% { clip-path: circle(0% at 50% 50%); }
+	40%, 60% { clip-path: circle(80% at 50% 50%); }
+	100% { clip-path: circle(0% at 50% 50%); }
+}

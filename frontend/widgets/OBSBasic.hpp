@@ -659,6 +659,9 @@ private slots:
 public slots:
 	void on_actionAdvAudioProperties_triggered();
 
+	/* Amal Studio : ajoute une transition à la liste sans fenêtre de saisie (si elle n'existe pas) */
+	void AmalAddTransition(const QString &id, const QString &name);
+
 public:
 	void ResetUI();
 

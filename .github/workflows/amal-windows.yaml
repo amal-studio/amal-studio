@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  AMAL_VERSION: 0.5.1
+  AMAL_VERSION: 0.6.0
 
 jobs:
   windows-x64:
@@ -60,7 +60,8 @@ jobs:
                                'data/obs-plugins/amal-graphiques/fonts/AmiriQuran.ttf', 'data/obs-plugins/amal-graphiques/locale/fr-FR.ini',
                                'obs-plugins/64bit/amal-dispositions.dll', 'data/obs-plugins/amal-dispositions/locale/fr-FR.ini',
                                'obs-plugins/64bit/amal-coran.dll', 'data/obs-plugins/amal-coran/tanzil/quran-uthmani.xml',
-                               'data/obs-plugins/amal-coran/tanzil/quran-data.xml', 'data/obs-plugins/amal-coran/locale/fr-FR.ini') ) {
+                               'data/obs-plugins/amal-coran/tanzil/quran-data.xml', 'data/obs-plugins/amal-coran/locale/fr-FR.ini',
+                               'obs-plugins/64bit/amal-transitions.dll', 'data/obs-plugins/amal-transitions/locale/fr-FR.ini') ) {
             if ( ! ( Test-Path (Join-Path $Install $File) ) ) { throw "Fichier du module Graphiques manquant : $File" }
           }
           $Info = (Get-Item $Exe).VersionInfo
