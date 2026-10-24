@@ -127,6 +127,138 @@
 		scroll.style.animationDuration = (distance / speed).toFixed(2) + 's';
 	}
 
+	/* ------------------------------------------------------------------ */
+	/* Bandeau TV                                                           */
+
+	var clockTimer = null;
+
+	function shiftedDate(days) {
+		var now = new Date();
+		now.setDate(now.getDate() + days);
+		return now;
+	}
+
+	function formatHijri(offset) {
+		try {
+			return new Intl.DateTimeFormat('ar-u-ca-islamic-umalqura-nu-latn', {
+				day: '2-digit', month: 'long', year: 'numeric'
+			}).format(shiftedDate(offset));
+		} catch (e) {
+			return '';
+		}
+	}
+
+	function formatGregorian() {
+		return new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+			.format(new Date());
+	}
+
+	function formatClock() {
+		return new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
+	}
+
+	/* Logo : uniquement un fichier local de l'utilisateur, transmis par Amal Studio */
+	function safeLogo(url) {
+		return typeof url === 'string' && url.indexOf('http://absolute/') === 0 ? url : '';
+	}
+
+	function buildBroadcast(d) {
+		var tv = el('div', 'tv');
+		var dateMode = d.date || 'les-deux';
+		var offset = Math.max(-2, Math.min(2, Number(d.hijri) || 0));
+
+		/* Haut droite : logo et badge EN DIRECT */
+		var corner = el('div', 'haut-droite');
+		var logo = safeLogo(d.logo);
+		if (logo) {
+			var img = el('img', 'logo', '', { src: logo, alt: '' });
+			corner.appendChild(img);
+		}
+		if (d.live) {
+			corner.appendChild(el('div', 'direct', str(d.label) || 'En direct'));
+		}
+		if (corner.childNodes.length) {
+			tv.appendChild(corner);
+		}
+
+		var bottom = el('div', 'zone-bas');
+
+		/* Gauche : date(s) et information libre */
+		var left = el('div', 'coin gauche');
+		if (dateMode === 'hegire' || dateMode === 'les-deux') {
+			var hijri = formatHijri(offset);
+			if (hijri) {
+				left.appendChild(el('div', 'hegire', hijri, { dir: 'rtl', lang: 'ar' }));
+			}
+		}
+		if (dateMode === 'gregorienne' || dateMode === 'les-deux') {
+			left.appendChild(el('div', 'greg', formatGregorian()));
+		}
+		if (str(d.info)) {
+			left.appendChild(el('div', 'info', str(d.info)));
+		}
+		bottom.appendChild(left.childNodes.length ? left : el('div'));
+
+		/* Centre : bannière de titre */
+		if (str(d.title) || str(d.subtitle)) {
+			var banner = el('div', 'banniere');
+			if (str(d.title)) banner.appendChild(el('div', 'ligne1', str(d.title), { dir: 'auto' }));
+			if (str(d.subtitle)) banner.appendChild(el('div', 'ligne2', str(d.subtitle), { dir: 'auto' }));
+			bottom.appendChild(banner);
+		}
+
+		/* Droite : horloge */
+		if (d.clock) {
+			var right = el('div', 'coin droite');
+			var clock = el('div', 'horloge', formatClock());
+			right.appendChild(clock);
+			bottom.appendChild(right);
+			clockTimer = window.setInterval(function () { clock.textContent = formatClock(); }, 1000);
+		} else {
+			bottom.appendChild(el('div'));
+		}
+		tv.appendChild(bottom);
+
+		/* Bande défilante en option */
+		if (d.band && str(d.fr)) {
+			tv.classList.add('avec-bande');
+			var ticker = buildTicker({ fr: d.fr, label: str(d.bandLabel) || 'Infos' });
+			ticker.classList.remove('card');
+			tv.appendChild(ticker);
+		}
+		return tv;
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Fond décoratif et cadres des dispositions                           */
+
+	function buildBackground() {
+		return el('div', 'fond');
+	}
+
+	function buildFrames(d) {
+		var wrap = el('div', 'cadres');
+		var style = ['aucune', 'fine', 'epaisse', 'ornee'].indexOf(d.frame) >= 0 ? d.frame : 'fine';
+		var frames = Array.isArray(d.frames) ? d.frames.slice(0, 9) : [];
+		frames.forEach(function (f) {
+			var x = Number(f.x), y = Number(f.y), w = Number(f.w), h = Number(f.h);
+			if (!(w > 0 && h > 0)) return;
+			var box = el('div', 'cadre style-' + style);
+			box.style.left = x + 'px';
+			box.style.top = y + 'px';
+			box.style.width = w + 'px';
+			box.style.height = h + 'px';
+			if (style === 'ornee') {
+				['a1', 'a2', 'a3', 'a4'].forEach(function (a) { box.appendChild(el('div', 'angle ' + a)); });
+			}
+			if (str(f.label)) {
+				box.appendChild(el('div', 'nom', str(f.label), { dir: 'auto' }));
+			}
+			wrap.appendChild(box);
+		});
+		return wrap;
+	}
+
 	/* La mise en page est prévue pour 1920 x 1080 : on l'adapte à la taille réelle */
 	function fitToCanvas() {
 		var zoom = window.innerWidth / 1920;
@@ -152,17 +284,30 @@
 
 		stage.className = 'tpl-' + template + ' pos-' + position;
 		stage.textContent = '';
+		if (clockTimer) {
+			window.clearInterval(clockTimer);
+			clockTimer = null;
+		}
 
 		var card;
 		if (template === 'intervenant') card = buildSpeaker(d);
 		else if (template === 'titre') card = buildTitle(d);
 		else if (template === 'bandeau') card = buildTicker(d);
+		else if (template === 'direct') card = buildBroadcast(d);
+		else if (template === 'fond') card = buildBackground(d);
+		else if (template === 'cadres') card = buildFrames(d);
 		else card = buildPanel(d);
+
+		/* Le fond et les cadres sont des éléments fixes : ni animation, ni durée */
+		if (template === 'fond' || template === 'cadres') {
+			stage.appendChild(card);
+			return;
+		}
 
 		card.classList.add('anim-' + animation, 'enter');
 		stage.appendChild(card);
 
-		if (template === 'bandeau') {
+		if (template === 'bandeau' || template === 'direct') {
 			applyTicker(card, d);
 		}
 

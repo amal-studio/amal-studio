@@ -82,6 +82,22 @@ std::string ColorToHex(long long value)
 	return buffer;
 }
 
+/* Chemin complet d'un fichier local -> adresse lisible par le navigateur interne */
+std::string LocalFileUrl(std::string file)
+{
+	for (char &c : file) {
+		if (c == '\\') {
+			c = '/';
+		}
+	}
+
+	/* Chemin Windows « C:/… » ou chemin absolu Unix « /… » */
+	if (!file.empty() && file[0] == '/') {
+		file.erase(0, 1);
+	}
+	return "http://absolute/" + PercentEncode(file, "/:");
+}
+
 /* Adresse de la page des modèles, servie par le gestionnaire de fichiers locaux du navigateur */
 std::string OverlayBaseUrl()
 {
@@ -97,17 +113,8 @@ std::string OverlayBaseUrl()
 	std::string file(absolute ? absolute : relative);
 	bfree(absolute);
 	bfree(relative);
-	for (char &c : file) {
-		if (c == '\\') {
-			c = '/';
-		}
-	}
 
-	/* Chemin Windows « C:/… » ou chemin absolu Unix « /… » */
-	if (!file.empty() && file[0] == '/') {
-		file.erase(0, 1);
-	}
-	const std::string url = "http://absolute/" + PercentEncode(file, "/:");
+	const std::string url = LocalFileUrl(file);
 	blog(LOG_INFO, "[amal-graphiques] Page des modèles : %s", url.c_str());
 	return url;
 }
@@ -135,6 +142,31 @@ std::string BuildUrl(AmalGraphic *g, obs_data_t *settings)
 	obs_data_set_string(data, "primary", ColorToHex(obs_data_get_int(settings, "couleur_principale")).c_str());
 	obs_data_set_string(data, "accent", ColorToHex(obs_data_get_int(settings, "couleur_accent")).c_str());
 	obs_data_set_string(data, "text", ColorToHex(obs_data_get_int(settings, "couleur_texte")).c_str());
+	/* Bandeau TV */
+	obs_data_set_string(data, "date", obs_data_get_string(settings, "format_date"));
+	obs_data_set_int(data, "hijri", obs_data_get_int(settings, "decalage_hegire"));
+	obs_data_set_bool(data, "clock", obs_data_get_bool(settings, "horloge"));
+	obs_data_set_bool(data, "live", obs_data_get_bool(settings, "badge_direct"));
+	obs_data_set_string(data, "info", obs_data_get_string(settings, "info"));
+	obs_data_set_bool(data, "band", obs_data_get_bool(settings, "bande"));
+	obs_data_set_string(data, "bandLabel", obs_data_get_string(settings, "libelle_bande"));
+	const char *logo = obs_data_get_string(settings, "logo");
+	if (logo && *logo && os_file_exists(logo)) {
+		obs_data_set_string(data, "logo", LocalFileUrl(logo).c_str());
+	}
+
+	/* Cadres des dispositions : {"frames":[{x,y,w,h,label}…]} en unités 1920 x 1080 */
+	obs_data_set_string(data, "frame", obs_data_get_string(settings, "style_cadre"));
+	obs_data_t *frames = obs_data_create_from_json(obs_data_get_string(settings, "cadres_json"));
+	if (frames) {
+		obs_data_array_t *list = obs_data_get_array(frames, "frames");
+		if (list) {
+			obs_data_set_array(data, "frames", list);
+			obs_data_array_release(list);
+		}
+		obs_data_release(frames);
+	}
+
 	/* Change l'adresse pour rejouer l'animation à la demande */
 	obs_data_set_int(data, "n", g->replay);
 
@@ -181,15 +213,41 @@ bool TemplateModified(obs_properties_t *props, obs_property_t *, obs_data_t *set
 	const bool speaker = t == "intervenant";
 	const bool title = t == "titre";
 	const bool ticker = t == "bandeau";
+	const bool tv = t == "direct";
+	const bool background = t == "fond";
+	const bool frames = t == "cadres";
+	const bool decor = background || frames;
 
-	obs_property_set_visible(obs_properties_get(props, "libelle"), panel || ticker);
+	obs_property_set_visible(obs_properties_get(props, "libelle"), panel || ticker || tv);
 	obs_property_set_visible(obs_properties_get(props, "texte_arabe"), panel || speaker || title);
-	obs_property_set_visible(obs_properties_get(props, "texte"), panel || ticker);
+	obs_property_set_visible(obs_properties_get(props, "texte"), panel || ticker || tv);
 	obs_property_set_visible(obs_properties_get(props, "reference"), panel || title);
-	obs_property_set_visible(obs_properties_get(props, "titre"), speaker || title);
-	obs_property_set_visible(obs_properties_get(props, "sous_titre"), speaker || title);
-	obs_property_set_visible(obs_properties_get(props, "vitesse"), ticker);
-	obs_property_set_visible(obs_properties_get(props, "position"), !speaker);
+	obs_property_set_visible(obs_properties_get(props, "titre"), speaker || title || tv);
+	obs_property_set_visible(obs_properties_get(props, "sous_titre"), speaker || title || tv);
+	obs_property_set_visible(obs_properties_get(props, "vitesse"), ticker || tv);
+	obs_property_set_visible(obs_properties_get(props, "position"), !speaker && !tv && !decor);
+	obs_property_set_visible(obs_properties_get(props, "animation"), !decor);
+	obs_property_set_visible(obs_properties_get(props, "duree"), !decor);
+	obs_property_set_visible(obs_properties_get(props, "taille"), !tv && !decor);
+	obs_property_set_visible(obs_properties_get(props, "rejouer"), !decor);
+	obs_property_set_visible(obs_properties_get(props, "couleur_texte"), !background);
+
+	for (const char *name : {"format_date", "decalage_hegire", "horloge", "badge_direct", "info", "logo", "bande",
+				 "libelle_bande"}) {
+		obs_property_set_visible(obs_properties_get(props, name), tv);
+	}
+	obs_property_set_visible(obs_properties_get(props, "style_cadre"), frames);
+	obs_property_set_visible(obs_properties_get(props, "aide_cadres"), frames);
+
+	/* Libellés qui changent de sens selon le modèle */
+	obs_property_set_description(obs_properties_get(props, "titre"),
+				     obs_module_text(tv ? "BannerTitle" : "TitleField"));
+	obs_property_set_description(obs_properties_get(props, "sous_titre"),
+				     obs_module_text(tv ? "BannerSubtitle" : "Subtitle"));
+	obs_property_set_description(obs_properties_get(props, "libelle"),
+				     obs_module_text(tv ? "LiveLabel" : "Label"));
+	obs_property_set_description(obs_properties_get(props, "texte"),
+				     obs_module_text(tv ? "BandText" : "Text"));
 	return true;
 }
 
@@ -216,6 +274,9 @@ obs_properties_t *GetProperties(void *data)
 	obs_property_list_add_string(list, obs_module_text("Template.Speaker"), "intervenant");
 	obs_property_list_add_string(list, obs_module_text("Template.Title"), "titre");
 	obs_property_list_add_string(list, obs_module_text("Template.Ticker"), "bandeau");
+	obs_property_list_add_string(list, obs_module_text("Template.Broadcast"), "direct");
+	obs_property_list_add_string(list, obs_module_text("Template.Background"), "fond");
+	obs_property_list_add_string(list, obs_module_text("Template.Frames"), "cadres");
 	obs_property_set_modified_callback(list, TemplateModified);
 
 	obs_properties_add_text(props, "libelle", obs_module_text("Label"), OBS_TEXT_DEFAULT);
@@ -224,6 +285,34 @@ obs_properties_t *GetProperties(void *data)
 	obs_properties_add_text(props, "reference", obs_module_text("Reference"), OBS_TEXT_DEFAULT);
 	obs_properties_add_text(props, "titre", obs_module_text("TitleField"), OBS_TEXT_DEFAULT);
 	obs_properties_add_text(props, "sous_titre", obs_module_text("Subtitle"), OBS_TEXT_DEFAULT);
+
+	/* Bandeau TV */
+	obs_property_t *dateFormat = obs_properties_add_list(props, "format_date", obs_module_text("DateFormat"),
+							     OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(dateFormat, obs_module_text("DateFormat.Both"), "les-deux");
+	obs_property_list_add_string(dateFormat, obs_module_text("DateFormat.Hijri"), "hegire");
+	obs_property_list_add_string(dateFormat, obs_module_text("DateFormat.Gregorian"), "gregorienne");
+	obs_property_list_add_string(dateFormat, obs_module_text("DateFormat.None"), "aucune");
+	obs_property_t *offset = obs_properties_add_int(props, "decalage_hegire", obs_module_text("HijriOffset"), -2,
+							2, 1);
+	obs_property_int_set_suffix(offset, obs_module_text("HijriOffset.Suffix"));
+	obs_property_set_long_description(offset, obs_module_text("HijriOffset.Help"));
+	obs_properties_add_bool(props, "horloge", obs_module_text("ShowClock"));
+	obs_properties_add_bool(props, "badge_direct", obs_module_text("ShowLive"));
+	obs_properties_add_text(props, "info", obs_module_text("CornerInfo"), OBS_TEXT_DEFAULT);
+	obs_properties_add_path(props, "logo", obs_module_text("Logo"), OBS_PATH_FILE,
+				"Images (*.png *.jpg *.jpeg *.webp *.svg *.gif)", nullptr);
+	obs_properties_add_bool(props, "bande", obs_module_text("ShowBand"));
+	obs_properties_add_text(props, "libelle_bande", obs_module_text("BandLabel"), OBS_TEXT_DEFAULT);
+
+	/* Cadres (réglés par le panneau Dispositions) */
+	obs_property_t *frameStyle = obs_properties_add_list(props, "style_cadre", obs_module_text("FrameStyle"),
+							     OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(frameStyle, obs_module_text("FrameStyle.None"), "aucune");
+	obs_property_list_add_string(frameStyle, obs_module_text("FrameStyle.Thin"), "fine");
+	obs_property_list_add_string(frameStyle, obs_module_text("FrameStyle.Thick"), "epaisse");
+	obs_property_list_add_string(frameStyle, obs_module_text("FrameStyle.Ornate"), "ornee");
+	obs_properties_add_text(props, "aide_cadres", obs_module_text("FramesHelp"), OBS_TEXT_INFO);
 
 	obs_property_t *pos = obs_properties_add_list(props, "position", obs_module_text("Position"),
 						      OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -269,6 +358,12 @@ void GetDefaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "couleur_principale", 0xFF4F6B0B); /* #0B6B4F */
 	obs_data_set_default_int(settings, "couleur_accent", 0xFF37AFD4);     /* #D4AF37 */
 	obs_data_set_default_int(settings, "couleur_texte", 0xFFFFFFFF);      /* #FFFFFF */
+	obs_data_set_default_string(settings, "format_date", "les-deux");
+	obs_data_set_default_int(settings, "decalage_hegire", 0);
+	obs_data_set_default_bool(settings, "horloge", true);
+	obs_data_set_default_bool(settings, "badge_direct", true);
+	obs_data_set_default_bool(settings, "bande", false);
+	obs_data_set_default_string(settings, "style_cadre", "fine");
 }
 
 /* ------------------------------------------------------------------------ */
