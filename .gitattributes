@@ -14,3 +14,4 @@ plugins/amal-coran/data/tanzil/*.xml -text
 # Amal Studio : données de hadiths livrées telles quelles
 plugins/amal-bibliotheque/data/hadiths/*.json -text
 build-aux/amal/licences-tiers/** -text
+*.pdf binary

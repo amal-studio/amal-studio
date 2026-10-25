@@ -19,7 +19,7 @@
 #pragma once
 
 /* Version d'Amal Studio, distincte de la version d'OBS Studio sur laquelle il repose. */
-#define AMAL_STUDIO_VERSION "0.14.0"
+#define AMAL_STUDIO_VERSION "0.15.0"
 
 /* Version d'OBS Studio servant de moteur. */
 #define AMAL_STUDIO_BASED_ON "OBS Studio 32.2.2"

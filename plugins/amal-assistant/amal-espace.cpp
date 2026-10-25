@@ -24,6 +24,12 @@
 #include <util/config-file.h>
 
 #include <QAction>
+#include <QCoreApplication>
+#include <QDesktopServices>
+#include <QDir>
+#include <QFileInfo>
+#include <QMessageBox>
+#include <QUrl>
 #include <QDockWidget>
 #include <QMainWindow>
 #include <QMenu>
@@ -99,6 +105,17 @@ QDockWidget *Tabify(QMainWindow *main, bool live)
 		}
 	}
 	return anchor;
+}
+
+/* Guide PDF installé à la racine du dossier d'Amal Studio (bin/64bit/../../) */
+void OpenGuide()
+{
+	const QString path = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("../../Guide-Amal-Studio.pdf");
+	if (QFileInfo::exists(path) && QDesktopServices::openUrl(QUrl::fromLocalFile(QDir::cleanPath(path)))) {
+		return;
+	}
+	QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/amal-studio/amal-studio/releases")));
+	QMessageBox::information(MainWindow(), T("Menu.Guide"), T("Guide.Missing"));
 }
 
 void SetMode(bool liveOnly)
@@ -177,6 +194,8 @@ void SetupAmalMenu()
 	menu->addSection(T("Menu.Assistants"));
 	menu->addAction(T("Menu.Startup"), main, [] { OpenAssistant(); });
 	menu->addAction(T("Menu.Mic"), main, [] { OpenMicAssistant(); });
+	menu->addSection(T("Menu.Help"));
+	menu->addAction(T("Menu.Guide"), main, [] { OpenGuide(); });
 
 	/* Avant le menu « Aide » (dernier menu) */
 	QMenuBar *bar = main->menuBar();

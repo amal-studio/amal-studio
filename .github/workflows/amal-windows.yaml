@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  AMAL_VERSION: 0.14.0
+  AMAL_VERSION: 0.15.0
 
 jobs:
   windows-x64:
@@ -87,6 +87,7 @@ jobs:
           Copy-Item build-aux/amal/licences-tiers/GPL-3.0.txt (Join-Path $Install 'LICENCE-GPL-3.0.txt')
           Copy-Item build-aux/amal/NOTICE.txt (Join-Path $Install 'NOTICE.txt')
           Copy-Item build-aux/amal/LICENCES-TIERS.txt (Join-Path $Install 'LICENCES-TIERS.txt')
+          Copy-Item build-aux/amal/Guide-Amal-Studio.pdf (Join-Path $Install 'Guide-Amal-Studio.pdf')
           $Licences = Join-Path $Install 'licences'
           New-Item -ItemType Directory -Force -Path $Licences | Out-Null
           Copy-Item -Recurse -Force build-aux/amal/licences-tiers/obs-deps (Join-Path $Licences 'bibliotheques')
@@ -104,7 +105,7 @@ jobs:
         run: |
           $Out = "${{ github.workspace }}/Amal-Studio-${{ env.AMAL_VERSION }}-Installer-x64.exe"
           $Makensis = 'C:\Program Files (x86)\NSIS\makensis.exe'
-          & $Makensis /V2 `
+          & $Makensis /V2 /INPUTCHARSET UTF8 `
             "/DAPP_VERSION=${{ env.AMAL_VERSION }}" `
             "/DSOURCE_DIR=${{ github.workspace }}\build_x64\install" `
             "/DVCREDIST=${{ runner.temp }}\vc_redist.x64.exe" `
@@ -139,7 +140,10 @@ jobs:
           - **Installateur** : Amal-Studio-${{ env.AMAL_VERSION }}-Installer-x64.exe
           - **Version portable** : Amal-Studio-${{ env.AMAL_VERSION }}-Portable-x64.zip
 
-          Amal Studio est basé sur OBS Studio et distribué sous licence GNU GPL v2 ou ultérieure.
+          - **Guide d'utilisation** : inclus (menu Amal > Guide d'utilisation)
+
+          Amal Studio est basé sur OBS Studio et distribué sous licence GNU GPL (v3 pour l'ensemble distribué).
+          Code signing policy : https://github.com/amal-studio/amal-studio#code-signing-policy
           Le code source correspondant est celui de ce commit.
           "@
           gh release delete amal-dev --cleanup-tag --yes 2>$null

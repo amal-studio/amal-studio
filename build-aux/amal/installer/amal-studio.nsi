@@ -10,7 +10,7 @@ RequestExecutionLevel admin
 ManifestDPIAware true
 
 !ifndef APP_VERSION
-  !define APP_VERSION "0.14.0"
+  !define APP_VERSION "0.15.0"
 !endif
 !ifndef SOURCE_DIR
   !error "SOURCE_DIR doit pointer vers le dossier install produit par la compilation"
@@ -39,6 +39,8 @@ BrandingText "Amal Studio ${APP_VERSION} - basé sur OBS Studio"
 !define MUI_FINISHPAGE_RUN "$INSTDIR\${APP_EXE}"
 !define MUI_FINISHPAGE_RUN_TEXT "Lancer Amal Studio"
 
+; Modifications du système annoncées avant l'installation (exigence de transparence)
+!define MUI_WELCOME_PAGE_TEXT "Cet assistant va installer Amal Studio ${APP_VERSION}.$\r$\n$\r$\nPour fonctionner, l'installation effectue aussi deux réglages de Windows, retirés à la désinstallation :$\r$\n$\r$\n• une autorisation dans le pare-feu Windows pour Amal Studio (ports UDP 9001 à 9003), afin de recevoir l'image de la caméra du téléphone sur le réseau local ;$\r$\n$\r$\n• le choix de la carte graphique haute performance pour Amal Studio.$\r$\n$\r$\nAmal Studio n'envoie aucune information sur Internet sans votre demande (diffusion, enregistrement en ligne du journal).$\r$\n$\r$\nCliquez sur Suivant pour continuer."
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "..\..\..\COPYING"
 !insertmacro MUI_PAGE_DIRECTORY
@@ -84,6 +86,7 @@ Section "Amal Studio" SecMain
   CreateDirectory "$SMPROGRAMS\Amal Studio"
   CreateShortcut "$SMPROGRAMS\Amal Studio\Amal Studio.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\${APP_EXE}" 0
   CreateShortcut "$SMPROGRAMS\Amal Studio\Désinstaller Amal Studio.lnk" "$INSTDIR\uninstall.exe"
+  CreateShortcut "$SMPROGRAMS\Amal Studio\Guide d'utilisation.lnk" "$INSTDIR\Guide-Amal-Studio.pdf"
   CreateShortcut "$DESKTOP\Amal Studio.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\${APP_EXE}" 0
 
   ; Carte graphique hautes performances (NVIDIA/AMD dédiée) pour Amal Studio,
@@ -117,6 +120,12 @@ Section "Uninstall"
   RMDir /r "$INSTDIR\data"
   RMDir /r "$INSTDIR\obs-plugins"
   Delete "$INSTDIR\uninstall.exe"
+  Delete "$INSTDIR\Guide-Amal-Studio.pdf"
+  Delete "$INSTDIR\LICENCES-TIERS.txt"
+  Delete "$INSTDIR\LICENCE-GPL.txt"
+  Delete "$INSTDIR\LICENCE-GPL-3.0.txt"
+  Delete "$INSTDIR\NOTICE.txt"
+  RMDir /r "$INSTDIR\licences"
   RMDir "$INSTDIR"
   DeleteRegValue HKCU "Software\Microsoft\DirectX\UserGpuPreferences" "$INSTDIR\${APP_EXE}"
   nsExec::Exec 'netsh advfirewall firewall delete rule name="Amal Studio"'
