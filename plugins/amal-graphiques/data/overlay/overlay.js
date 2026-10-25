@@ -889,6 +889,12 @@
 		var look = ['classique', 'moderne', 'epure', 'verre'].indexOf(d.look) >= 0 ? d.look : 'classique';
 		var html = document.documentElement;
 		html.className = 'look-' + look + (d.motif === false ? ' sans-motif' : '');
+		/* Épuré : panneaux blancs, donc un texte clair deviendrait invisible */
+		if (look === 'epure') {
+			var ink = /^#[0-9a-fA-F]{6}$/.test(d.text || '') ? d.text : '#FFFFFF';
+			var lum = 0.2126 * parseInt(ink.substr(1, 2), 16) + 0.7152 * parseInt(ink.substr(3, 2), 16) + 0.0722 * parseInt(ink.substr(5, 2), 16);
+			if (lum > 150) root.setProperty('--ink', '#1D2B24');
+		}
 
 		var scale = Number(d.scale);
 		if (scale >= 0.3 && scale <= 2) root.setProperty('--scale', String(scale));
