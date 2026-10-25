@@ -133,9 +133,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          $HashInstaller = (Get-FileHash "Amal-Studio-${{ env.AMAL_VERSION }}-Installer-x64.exe" -Algorithm SHA256).Hash
+          $HashPortable = (Get-FileHash "Amal-Studio-${{ env.AMAL_VERSION }}-Portable-x64.zip" -Algorithm SHA256).Hash
           $Notes = @"
           Version de développement d'Amal Studio ${{ env.AMAL_VERSION }}, compilée automatiquement.
           Commit : ${{ github.sha }}
+
+          Empreintes SHA-256 (pour vérifier que le fichier téléchargé est authentique) :
+          - Installateur : $HashInstaller
+          - Version portable : $HashPortable
 
           - **Installateur** : Amal-Studio-${{ env.AMAL_VERSION }}-Installer-x64.exe
           - **Version portable** : Amal-Studio-${{ env.AMAL_VERSION }}-Portable-x64.zip
