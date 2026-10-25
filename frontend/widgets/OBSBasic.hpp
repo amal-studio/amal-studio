@@ -662,6 +662,10 @@ public slots:
 	/* Amal Studio : ajoute une transition à la liste sans fenêtre de saisie (si elle n'existe pas) */
 	void AmalAddTransition(const QString &id, const QString &name);
 
+	/* Amal Studio : supprime un projet (collection de scènes) après confirmation dans le panneau Projets.
+	 * Le projet ouvert ne peut être supprimé que s'il en existe un autre (le logiciel bascule dessus). */
+	bool AmalDeleteProject(const QString &name);
+
 public:
 	void ResetUI();
 

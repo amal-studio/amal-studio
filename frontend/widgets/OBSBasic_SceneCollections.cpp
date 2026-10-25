@@ -324,9 +324,14 @@ void OBSBasic::DeleteSceneCollection(const QString &name)
 		return;
 	}
 
-	SceneCollection currentCollection = GetCurrentSceneCollection();
+	/* Amal Studio : correction d'OBS, qui supprimait ici le fichier du projet ouvert
+	 * au lieu de celui du projet demandé. */
+	auto foundCollection = GetSceneCollectionByName(name.toStdString());
+	if (!foundCollection) {
+		return;
+	}
 
-	RemoveSceneCollection(currentCollection);
+	RemoveSceneCollection(foundCollection.value());
 
 	collections.erase(name.toStdString());
 
@@ -589,6 +594,35 @@ void OBSBasic::on_actionRenameSceneCollection_triggered()
 	} catch (const std::logic_error &error) {
 		blog(LOG_ERROR, "%s", error.what());
 	}
+}
+
+bool OBSBasic::AmalDeleteProject(const QString &name)
+{
+	const std::string target = name.toStdString();
+	const std::string_view currentName{config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection")};
+
+	if (currentName == target) {
+		if (collections.size() < 2) {
+			return false;
+		}
+		on_actionRemoveSceneCollection_triggered(true);
+		return !GetSceneCollectionByName(target).has_value();
+	}
+
+	auto foundCollection = GetSceneCollectionByName(target);
+	if (!foundCollection) {
+		return false;
+	}
+	try {
+		RemoveSceneCollection(foundCollection.value());
+	} catch (const std::logic_error &error) {
+		blog(LOG_ERROR, "%s", error.what());
+		return false;
+	}
+	collections.erase(target);
+	RefreshSceneCollections();
+	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
+	return true;
 }
 
 void OBSBasic::on_actionRemoveSceneCollection_triggered(bool skipConfirmation)

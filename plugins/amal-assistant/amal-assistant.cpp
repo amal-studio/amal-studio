@@ -17,6 +17,8 @@
     (at your option) any later version.
 ******************************************************************************/
 
+#include "amal-assistant.hpp"
+
 #include <obs-module.h>
 #include <obs-frontend-api.h>
 #include <obs.hpp>
@@ -70,10 +72,7 @@ constexpr const char *MIC_ID = "pulse_input_capture";
 constexpr const char *MIC_KEY = "device_id";
 constexpr uint32_t MIC_CHANNEL = 3; /* canal « Mic/Aux » du logiciel */
 
-inline QString T(const char *key)
-{
-	return QString::fromUtf8(obs_module_text(key));
-}
+using amal::T;
 
 /* Appareils proposés par un type de source (caméras, micros), via une source temporaire */
 std::vector<std::pair<QString, QString>> ListDevices(const char *sourceId, const char *property)
@@ -512,7 +511,9 @@ void AssistantWizard::build()
 	blog(LOG_INFO, "[amal-assistant] Projet de départ créé");
 }
 
-void OpenAssistant()
+} // namespace
+
+void amal::OpenAssistant()
 {
 	QMainWindow *main = static_cast<QMainWindow *>(obs_frontend_get_main_window());
 	AssistantWizard wizard(main);
@@ -526,6 +527,8 @@ void OpenAssistant()
 	}
 }
 
+namespace {
+
 /* Attend que les autres fenêtres de premier démarrage (réglages automatiques) soient fermées */
 void OpenWhenFree()
 {
@@ -533,7 +536,7 @@ void OpenWhenFree()
 		QTimer::singleShot(2000, static_cast<QWidget *>(obs_frontend_get_main_window()), [] { OpenWhenFree(); });
 		return;
 	}
-	OpenAssistant();
+	amal::OpenAssistant();
 }
 
 void FrontendEvent(enum obs_frontend_event event, void *)
@@ -541,6 +544,8 @@ void FrontendEvent(enum obs_frontend_event event, void *)
 	if (event != OBS_FRONTEND_EVENT_FINISHED_LOADING) {
 		return;
 	}
+	amal::SetupAmalMenu();
+	amal::ArrangePanelsOnce();
 	config_t *config = obs_frontend_get_app_config();
 	if (config && !config_get_bool(config, CONFIG_SECTION, "Done")) {
 		/* Laisse la fenêtre principale s'afficher avant l'assistant */
@@ -552,7 +557,6 @@ void FrontendEvent(enum obs_frontend_event event, void *)
 
 bool obs_module_load(void)
 {
-	obs_frontend_add_tools_menu_item(obs_module_text("Menu"), [](void *) { OpenAssistant(); }, nullptr);
 	obs_frontend_add_event_callback(FrontendEvent, nullptr);
 	return true;
 }

@@ -388,10 +388,14 @@ public:
 		QHBoxLayout *buttons = new QHBoxLayout;
 		QPushButton *newButton = new QPushButton(T("Dock.New"), this);
 		QPushButton *openButton = new QPushButton(T("Dock.Open"), this);
+		QPushButton *deleteButton = new QPushButton(T("Dock.Delete"), this);
+		deleteButton->setToolTip(T("Dock.Delete.Help"));
 		connect(newButton, &QPushButton::clicked, this, &ProjectsDock::createProject);
 		connect(openButton, &QPushButton::clicked, this, &ProjectsDock::openSelected);
+		connect(deleteButton, &QPushButton::clicked, this, &ProjectsDock::deleteSelected);
 		buttons->addWidget(newButton);
 		buttons->addWidget(openButton);
+		buttons->addWidget(deleteButton);
 		layout->addLayout(buttons);
 
 		saveLabel = new QLabel(this);
@@ -533,6 +537,49 @@ private:
 
 		obs_frontend_save();
 		obs_frontend_set_current_scene_collection(name.c_str());
+	}
+
+	/* Suppression définitive d'un projet, après confirmation */
+	void deleteSelected()
+	{
+		QListWidgetItem *item = list->currentItem();
+		if (!item) {
+			ShowWarning(T("Error.SelectProject"));
+			return;
+		}
+		const QString name = item->text();
+		const bool isCurrent = name.toStdString() == GetCurrentCollection();
+		if (isCurrent && GetCollections().size() < 2) {
+			ShowWarning(T("Error.LastProject"));
+			return;
+		}
+		if (isCurrent && OutputsActive()) {
+			ShowWarning(T("Error.OutputsActive"));
+			return;
+		}
+
+		QMessageBox box(QMessageBox::Warning, T("Delete.Title"),
+				(isCurrent ? T("Delete.TextCurrent") : T("Delete.Text")).arg(name), QMessageBox::NoButton,
+				this);
+		QPushButton *confirm = box.addButton(T("Delete.Confirm"), QMessageBox::DestructiveRole);
+		box.addButton(T("Delete.Cancel"), QMessageBox::RejectRole);
+		box.setDefaultButton(qobject_cast<QPushButton *>(box.buttons().last()));
+		box.exec();
+		if (box.clickedButton() != confirm) {
+			return;
+		}
+
+		if (isCurrent) {
+			obs_frontend_save();
+		}
+		bool deleted = false;
+		QObject *main = static_cast<QObject *>(obs_frontend_get_main_window());
+		const bool called = QMetaObject::invokeMethod(main, "AmalDeleteProject", Qt::DirectConnection,
+							      Q_RETURN_ARG(bool, deleted), Q_ARG(QString, name));
+		if (!called || !deleted) {
+			ShowWarning(T("Error.DeleteFailed"));
+		}
+		refresh();
 	}
 
 	QLabel *currentLabel = nullptr;

@@ -7,7 +7,7 @@ find_package(Qt6 REQUIRED Widgets)
 add_library(amal-assistant MODULE)
 add_library(OBS::amal-assistant ALIAS amal-assistant)
 
-target_sources(amal-assistant PRIVATE amal-assistant.cpp)
+target_sources(amal-assistant PRIVATE amal-assistant.cpp amal-assistant.hpp amal-micro.cpp amal-espace.cpp)
 
 target_link_libraries(amal-assistant PRIVATE OBS::frontend-api OBS::libobs Qt::Widgets)
 
