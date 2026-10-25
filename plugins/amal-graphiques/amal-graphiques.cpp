@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <mutex>
 #include <string>
 
@@ -212,6 +213,10 @@ std::string BuildUrl(AmalGraphic *g, obs_data_t *settings)
 	obs_data_set_bool(data, "greet", obs_data_get_bool(settings, "salutation"));
 	obs_data_set_string(data, "istyle", obs_data_get_string(settings, "style_intro"));
 	obs_data_set_int(data, "idur", obs_data_get_int(settings, "duree_intro"));
+	/* Écran d'attente */
+	obs_data_set_string(data, "cmode", obs_data_get_string(settings, "compte_mode"));
+	obs_data_set_int(data, "cmin", obs_data_get_int(settings, "compte_minutes"));
+	obs_data_set_string(data, "at", obs_data_get_string(settings, "compte_heure"));
 	/* Cadre d'événement */
 	obs_data_set_string(data, "evt", obs_data_get_string(settings, "disposition_evt"));
 	obs_data_set_string(data, "edate", obs_data_get_string(settings, "date_evt"));
@@ -281,15 +286,22 @@ bool TemplateModified(obs_properties_t *props, obs_property_t *, obs_data_t *set
 	const bool frames = t == "cadres";
 	const bool event = t == "evenement";
 	const bool intro = t == "intro";
+	const bool waiting = t == "attente";
+	const bool atTime = strcmp(obs_data_get_string(settings, "compte_mode"), "heure") == 0;
 	const bool greeting = background && obs_data_get_bool(settings, "salutation");
-	const bool decor = background || frames || event || intro;
+	const bool decor = background || frames || event || intro || waiting;
 
 	obs_property_set_visible(obs_properties_get(props, "libelle"), panel || ticker || tv || event);
 	obs_property_set_visible(obs_properties_get(props, "texte_arabe"), panel || speaker || title || greeting || intro);
-	obs_property_set_visible(obs_properties_get(props, "texte"), panel || ticker || tv || event);
+	obs_property_set_visible(obs_properties_get(props, "texte"), panel || ticker || tv || event || waiting);
 	obs_property_set_visible(obs_properties_get(props, "reference"), panel || title);
-	obs_property_set_visible(obs_properties_get(props, "titre"), speaker || title || tv || event || greeting || intro);
-	obs_property_set_visible(obs_properties_get(props, "sous_titre"), speaker || title || tv || event || intro);
+	obs_property_set_visible(obs_properties_get(props, "titre"),
+				 speaker || title || tv || event || greeting || intro || waiting);
+	obs_property_set_visible(obs_properties_get(props, "sous_titre"),
+				 speaker || title || tv || event || intro || waiting);
+	obs_property_set_visible(obs_properties_get(props, "compte_mode"), waiting);
+	obs_property_set_visible(obs_properties_get(props, "compte_minutes"), waiting && !atTime);
+	obs_property_set_visible(obs_properties_get(props, "compte_heure"), waiting && atTime);
 	obs_property_set_visible(obs_properties_get(props, "vitesse"), ticker || tv);
 	obs_property_set_visible(obs_properties_get(props, "position"), !speaker && !tv && !decor);
 	obs_property_set_visible(obs_properties_get(props, "animation"), !decor);
@@ -304,8 +316,8 @@ bool TemplateModified(obs_properties_t *props, obs_property_t *, obs_data_t *set
 				 "libelle_bande"}) {
 		obs_property_set_visible(obs_properties_get(props, name), tv);
 	}
-	obs_property_set_visible(obs_properties_get(props, "logo"), tv || event || intro);
-	obs_property_set_visible(obs_properties_get(props, "fond_evenement"), background || intro);
+	obs_property_set_visible(obs_properties_get(props, "logo"), tv || event || intro || waiting);
+	obs_property_set_visible(obs_properties_get(props, "fond_evenement"), background || intro || waiting);
 	obs_property_set_visible(obs_properties_get(props, "salutation"), background);
 	for (const char *name : {"style_intro", "duree_intro", "scene_suivante", "aide_intro"}) {
 		obs_property_set_visible(obs_properties_get(props, name), intro);
@@ -321,6 +333,7 @@ bool TemplateModified(obs_properties_t *props, obs_property_t *, obs_data_t *set
 				     obs_module_text(tv	      ? "BannerTitle"
 						     : event  ? "Event.Title"
 						     : intro  ? "Intro.Title"
+						     : waiting ? "Wait.Title"
 						     : background ? "Greeting.French"
 								  : "TitleField"));
 	obs_property_set_description(obs_properties_get(props, "texte_arabe"),
@@ -332,7 +345,7 @@ bool TemplateModified(obs_properties_t *props, obs_property_t *, obs_data_t *set
 	obs_property_set_description(obs_properties_get(props, "libelle"),
 				     obs_module_text(tv ? "LiveLabel" : event ? "Event.Label" : "Label"));
 	obs_property_set_description(obs_properties_get(props, "texte"),
-				     obs_module_text(tv ? "BandText" : event ? "Event.Cards" : "Text"));
+				     obs_module_text(tv ? "BandText" : event ? "Event.Cards" : waiting ? "Wait.Done" : "Text"));
 	return true;
 }
 
@@ -364,6 +377,7 @@ obs_properties_t *GetProperties(void *data)
 	obs_property_list_add_string(list, obs_module_text("Template.Frames"), "cadres");
 	obs_property_list_add_string(list, obs_module_text("Template.Event"), "evenement");
 	obs_property_list_add_string(list, obs_module_text("Template.Intro"), "intro");
+	obs_property_list_add_string(list, obs_module_text("Template.Waiting"), "attente");
 	obs_property_set_modified_callback(list, TemplateModified);
 
 	obs_properties_add_text(props, "libelle", obs_module_text("Label"), OBS_TEXT_DEFAULT);
@@ -402,6 +416,17 @@ obs_properties_t *GetProperties(void *data)
 	}
 	obs_property_t *greet = obs_properties_add_bool(props, "salutation", obs_module_text("Greeting"));
 	obs_property_set_modified_callback(greet, TemplateModified);
+
+	/* Écran d'attente */
+	obs_property_t *cmode = obs_properties_add_list(props, "compte_mode", obs_module_text("Wait.Mode"),
+							OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(cmode, obs_module_text("Wait.Mode.Minutes"), "minutes");
+	obs_property_list_add_string(cmode, obs_module_text("Wait.Mode.Time"), "heure");
+	obs_property_set_modified_callback(cmode, TemplateModified);
+	obs_property_t *cmin = obs_properties_add_int(props, "compte_minutes", obs_module_text("Wait.Minutes"), 1, 240, 1);
+	obs_property_int_set_suffix(cmin, " min");
+	obs_property_t *at = obs_properties_add_text(props, "compte_heure", obs_module_text("Wait.Time"), OBS_TEXT_DEFAULT);
+	obs_property_set_long_description(at, obs_module_text("Wait.Time.Help"));
 
 	/* Intro vidéo */
 	obs_property_t *introStyle = obs_properties_add_list(props, "style_intro", obs_module_text("Intro.Style"),
@@ -518,6 +543,9 @@ void GetDefaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, "disposition_evt", "cadre");
 	obs_data_set_default_bool(settings, "salutation", false);
 	obs_data_set_default_string(settings, "style_intro", "etoile");
+	obs_data_set_default_string(settings, "compte_mode", "minutes");
+	obs_data_set_default_int(settings, "compte_minutes", 5);
+	obs_data_set_default_string(settings, "compte_heure", "20:30");
 	obs_data_set_default_int(settings, "duree_intro", 8);
 	obs_data_set_default_bool(settings, "motif", true);
 }

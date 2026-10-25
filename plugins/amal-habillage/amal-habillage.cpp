@@ -207,6 +207,7 @@ const QuickGraphic QUICK[] = {
 	{"direct", "Quick.Broadcast", "Name.Broadcast", false, true, nullptr},
 	{"bandeau", "Quick.Ticker", "Name.Ticker", false, true, nullptr},
 	{"rappel", "Quick.Reminder", "Name.Reminder", false, true, nullptr},
+	{"attente", "Quick.Waiting", "Name.Waiting", false, true, nullptr},
 	{"fond", "Quick.Background", "Name.Background", true, false, nullptr},
 };
 
@@ -741,6 +742,11 @@ private:
 				obs_data_set_string(settings, "texte", T("Placeholder.Cards").toUtf8().constData());
 			}
 			placeCamera(scene, EventWindow(q.eventLayout));
+		}
+		if (strcmp(q.model, "attente") == 0) {
+			obs_data_set_string(settings, "titre", T("Placeholder.WaitTitle").toUtf8().constData());
+			obs_data_set_string(settings, "texte", T("Placeholder.WaitDone").toUtf8().constData());
+			obs_data_set_string(settings, "texte_arabe", "");
 		}
 		if (strcmp(q.model, "rappel") == 0) {
 			/* Pas de texte religieux par défaut : l'utilisateur saisit le sien */

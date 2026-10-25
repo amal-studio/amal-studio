@@ -1193,3 +1193,56 @@ html.look-epure .intro-titre { color: #FFFFFF; }
 @keyframes intro-faisceau { from { transform: translateX(0); opacity: 1; } 80% { opacity: 1; } to { transform: translateX(2400px); opacity: 0; } }
 .intro-particule { fill: color-mix(in srgb, var(--accent) 70%, white); opacity: 0; animation: intro-particule 6s ease-out infinite; }
 @keyframes intro-particule { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-900px); } }
+
+/* ================================================================== */
+/* Écran d'attente                                                     */
+
+#stage.tpl-attente { display: block; }
+.attente { position: absolute; inset: 0; }
+.attente-centre {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 30px;
+	padding: 0 140px;
+	animation: fade-in 0.8s ease-out both;
+}
+.attente-logo { max-width: 300px; max-height: 170px; object-fit: contain; filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.5)); }
+.attente-titre {
+	max-width: 100%;
+	white-space: nowrap;
+	overflow: hidden;
+	font-size: 70px;
+	font-weight: 900;
+	color: #FFFFFF;
+	text-shadow: 0 6px 26px rgba(0, 0, 0, 0.5);
+}
+.attente-anneau {
+	--progres: 0;
+	position: relative;
+	width: 380px;
+	height: 380px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background:
+		radial-gradient(closest-side, color-mix(in srgb, var(--primary) 55%, black) 88%, transparent 89%),
+		conic-gradient(var(--accent) calc(var(--progres) * 360deg), color-mix(in srgb, var(--accent) 18%, transparent) 0);
+	box-shadow: 0 0 60px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.attente-compteur {
+	font-size: 96px;
+	font-weight: 800;
+	color: var(--accent);
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.02em;
+	text-align: center;
+	padding: 0 30px;
+}
+.attente-compteur.long { font-size: 68px; }
+.attente-anneau.fini .attente-compteur { font-size: 36px; line-height: 1.25; padding: 0 56px; animation: pulse 1.4s ease-in-out infinite; }
+.attente-sous-titre { max-width: 100%; white-space: nowrap; overflow: hidden; font-size: 40px; font-weight: 600; color: #FFFFFF; opacity: 0.92; }

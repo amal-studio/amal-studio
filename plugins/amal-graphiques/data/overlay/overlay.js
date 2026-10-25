@@ -399,6 +399,68 @@
 		return intro;
 	}
 
+	/* ------------------------------------------------------------------ */
+	/* Écran d'attente avec compte à rebours                               */
+	/* Mode « minutes » : départ à l'affichage de la scène.                */
+	/* Mode « heure »   : jusqu'à une heure précise (HH:MM, heure du PC).  */
+
+	var countdownTimer = null;
+
+	function countdownTarget(d) {
+		if (d.cmode === 'heure') {
+			var m = /^(\d{1,2})[:hH.](\d{2})$/.exec(str(d.at));
+			if (m) {
+				var target = new Date();
+				target.setHours(Number(m[1]), Number(m[2]), 0, 0);
+				if (target.getTime() < Date.now() - 6 * 3600 * 1000) target.setDate(target.getDate() + 1);
+				return target.getTime();
+			}
+		}
+		var minutes = Math.max(0, Math.min(240, Number(d.cmin) || 5));
+		return Date.now() + minutes * 60000;
+	}
+
+	function formatRemaining(ms) {
+		var total = Math.max(0, Math.ceil(ms / 1000));
+		var h = Math.floor(total / 3600), m = Math.floor(total % 3600 / 60), sec = total % 60;
+		var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+		return (h ? h + ':' + pad(m) : pad(m)) + ':' + pad(sec);
+	}
+
+	function buildWaiting(d) {
+		var wrap = el('div', 'attente');
+		wrap.appendChild(buildBackground({ fevt: d.fevt }));
+		var centre = el('div', 'attente-centre');
+		var logo = safeLogo(d.logo);
+		if (logo) centre.appendChild(el('img', 'attente-logo', '', { src: logo, alt: '' }));
+		centre.appendChild(el('div', 'attente-titre', str(d.title) || 'Le direct commence bientôt', { dir: 'auto' }));
+		var ring = el('div', 'attente-anneau');
+		var clock = el('div', 'attente-compteur', '00:00');
+		ring.appendChild(clock);
+		centre.appendChild(ring);
+		if (str(d.subtitle)) centre.appendChild(el('div', 'attente-sous-titre', str(d.subtitle), { dir: 'auto' }));
+		wrap.appendChild(centre);
+
+		var target = countdownTarget(d);
+		var total = Math.max(1, target - Date.now());
+		var done = str(d.fr) || 'Nous commençons…';
+		function tick() {
+			var left = target - Date.now();
+			if (left <= 0) {
+				clock.textContent = done;
+				ring.classList.add('fini');
+				if (countdownTimer) { window.clearInterval(countdownTimer); countdownTimer = null; }
+			} else {
+				clock.textContent = formatRemaining(left);
+				clock.classList.toggle('long', clock.textContent.length > 5);
+			}
+			ring.style.setProperty('--progres', String(Math.max(0, Math.min(1, 1 - left / total))));
+		}
+		tick();
+		countdownTimer = window.setInterval(tick, 250);
+		return wrap;
+	}
+
 	/* Réduit un texte sur une ligne jusqu'à ce qu'il tienne en largeur */
 	function shrinkToWidth(node, minSize) {
 		for (var i = 0; i < 40 && node.scrollWidth > node.clientWidth + 1; i++) {
@@ -842,6 +904,10 @@
 			window.clearInterval(clockTimer);
 			clockTimer = null;
 		}
+		if (countdownTimer) {
+			window.clearInterval(countdownTimer);
+			countdownTimer = null;
+		}
 
 		if (pageTimer) {
 			window.clearInterval(pageTimer);
@@ -859,6 +925,7 @@
 		else if (template === 'transition') card = buildTransition(d);
 		else if (template === 'evenement') card = buildEventFrame(d);
 		else if (template === 'intro') card = buildIntro(d);
+		else if (template === 'attente') card = buildWaiting(d);
 		else {
 			pages = buildPanelPages(d, stage);
 			card = pages[0];
@@ -867,6 +934,11 @@
 		/* Le fond et les cadres sont des éléments fixes : ni animation, ni durée */
 		if (template === 'fond' || template === 'cadres' || template === 'transition') {
 			stage.appendChild(card);
+			return;
+		}
+		if (template === 'attente') {
+			stage.appendChild(card);
+			card.querySelectorAll('.attente-titre, .attente-sous-titre').forEach(function (n) { shrinkToWidth(n, 20); });
 			return;
 		}
 		if (template === 'intro') {
