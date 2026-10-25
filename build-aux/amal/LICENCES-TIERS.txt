@@ -1,0 +1,131 @@
+AMAL STUDIO - INVENTAIRE DES LICENCES
+=====================================
+
+Ce document recense les composants distribués avec Amal Studio pour Windows,
+leur licence et leur rôle. Les textes complets des licences des bibliothèques
+se trouvent dans le dossier « licences » de l'installation.
+
+Inventaire établi le 25 octobre 2026 pour Amal Studio 1.0, à partir du code
+source d'Amal Studio et des dépendances précompilées d'OBS
+(obs-deps, édition 2026-07-15, commit 8683107a02300923abe4f293920f4b5edc8cb624).
+
+
+1. LICENCE D'AMAL STUDIO
+------------------------
+Amal Studio est un logiciel libre, basé sur OBS Studio 32.2.2. Son code est
+distribué sous la licence publique générale GNU (GPL), version 2 ou (au choix)
+toute version ultérieure.
+
+Le composant FFmpeg fourni avec le logiciel est compilé avec x264 sous licence
+GPL version 3 (options --enable-gpl et --enable-version3). En conséquence,
+l'ensemble exécutable distribué (installateur et version portable) doit être
+considéré comme régi par la GPL version 3.
+
+Conséquences pratiques :
+- toute personne qui reçoit le logiciel peut l'utiliser, l'étudier, le modifier
+  et le redistribuer, y compris contre paiement ;
+- quiconque distribue le logiciel (gratuitement ou en le vendant) doit fournir
+  le code source complet et correspondant, sous la même licence ;
+- une « version Pro » distribuée sous forme de programme reste soumise à ces
+  mêmes règles : son code doit être publié sous GPL.
+
+Code source : https://github.com/amal-studio/amal-studio
+
+
+2. MOTEUR ET INTERFACE
+----------------------
+Composant                         Version         Licence
+OBS Studio (libobs, interface,    32.2.2          GPL v2 ou ultérieure
+  modules)
+Modules Amal Studio (amal-*)      1.0             GPL v2 ou ultérieure
+obs-browser (source navigateur)   (OBS 32.2.2)    GPL v2 ou ultérieure
+obs-websocket                     (OBS 32.2.2)    GPL v2 ou ultérieure
+librtmp (dans obs-outputs)        -               LGPL v2.1
+RNNoise (réduction de bruit)      2020-07-28      BSD 3 clauses
+Qt                                6 (obs-deps)    LGPL v3 / GPL
+Chromium Embedded Framework       branche 6533    BSD 3 clauses (Chromium : BSD
+  (CEF, rendu des habillages)                     et licences de ses composants)
+
+
+3. AUDIO, VIDÉO ET RÉSEAU (obs-deps 2026-07-15)
+-----------------------------------------------
+FFmpeg                            8.1.2           GPL v3 (compilé avec x264)
+x264 (encodeur H.264)             r3106           GPL v2 ou ultérieure
+libvpx                            1.14.1          BSD 3 clauses
+aom (AV1)                         3.13.1          BSD 2 clauses + brevets AOM
+SVT-AV1                           2.3.0           BSD 3 clauses Clear + brevets AOM
+Opus                              1.5.2           BSD 3 clauses
+libogg                            1.3.5           BSD 3 clauses
+libvorbis                         1.3.7           BSD 3 clauses
+libtheora                         1.1.1           BSD 3 clauses
+LAME (MP3)                        3.100           LGPL v2
+SpeexDSP                          1.2.1           BSD 3 clauses
+libpng                            1.6.47          libpng (permissive)
+zlib                              1.3.1           zlib
+zstd                              1.5.7           BSD / GPL v2 (au choix)
+FreeType                          2.13.3          FreeType (FTL) / GPL v2
+SRT (caméra du téléphone)         1.5.2           MPL 2.0
+librist                           0.2.7           BSD 2 clauses
+libdatachannel (WebRTC/WHIP)      0.24.2          MPL 2.0
+mbedTLS                           3.6.4           Apache 2.0
+curl                              8.12.1          curl (MIT/X)
+Jansson                           2.14.1          MIT
+nlohmann/json                     3.11.3          MIT
+WebSocket++                       0.8.2           BSD 3 clauses
+Asio                              1.32.0          Boost 1.0
+QR Code generator (qrcodegen)     1.8.0           MIT
+LuaJIT                            2.1             MIT
+uthash                            2.3.0           BSD
+SIMDe                             0.8.2           MIT / CC0
+Microsoft Detours                 4.0.1           MIT
+Windows Implementation Library    1.0.240803.1    MIT
+oneVPL (Intel)                    2.14.0          MIT
+NVIDIA Video Codec headers        13.0.19.0       MIT
+AMD AMF                           1.5.0           MIT
+AJA NTV2                          17.0.1          MIT
+Vulkan SDK (en-têtes)             1.3.216.0       Apache 2.0 / MIT
+pthreads-win32                    -               LGPL v2.1
+Python (en-têtes, scripts)        3.x             PSF (facultatif)
+Windows : bibliothèques Visual C++ (vc_redist) - Microsoft, redistribuable.
+
+
+4. CONTENUS INTÉGRÉS
+--------------------
+Texte du Coran
+  Source : Tanzil Project, texte Uthmani version 1.0.2, et métadonnées
+  quran-data.xml. (C) 2008-2010 Tanzil Project - https://tanzil.net
+  Licence : Creative Commons Attribution 3.0, avec la condition du projet :
+  copie conforme uniquement, toute modification du texte est interdite.
+  Le fichier est livré tel quel (contrôle octet par octet) et la source est
+  citée dans le panneau Coran.
+
+Recueils de hadiths en arabe
+  Source : projet hadith-api de fawazahmed0 (Sahih al-Bukhari, Sahih Muslim,
+  Sunan Abi Dawud, Jami' at-Tirmidhi, Sunan an-Nasa'i, Sunan Ibn Majah,
+  Muwatta Malik), commit df57907be35291c91ad6a6691180e22ca9920784.
+  Licence : The Unlicense (domaine public). Fichiers livrés sans modification.
+  Les degrés d'authenticité affichés sont ceux de la source, avec le nom du
+  savant ; Amal Studio n'en calcule aucun.
+
+Polices Amiri et Amiri Quran (Khaled Hosny et le projet Amiri)
+  Licence : SIL Open Font License 1.1 (fichier Amiri-OFL.txt fourni).
+
+Décors, fonds d'événement, cadres, intros et transitions Amal
+  Dessinés par le code d'Amal Studio (GPL), sans image extérieure.
+
+Traductions du Coran : aucune n'est intégrée à ce jour. Les traductions
+françaises éditées (par exemple celle de Muhammad Hamidullah) sont protégées
+par le droit d'auteur ; seule une traduction dont la licence permet la
+redistribution (par exemple via QuranEnc, sans modification) pourra être
+ajoutée, après vérification de ses conditions.
+
+
+5. MARQUES
+----------
+« OBS » et « OBS Studio » sont des marques du projet OBS. Amal Studio n'est
+ni affilié au projet OBS, ni approuvé par lui. YouTube, Facebook, Instagram,
+TikTok et Twitch sont des marques de leurs propriétaires respectifs ; Amal
+Studio n'est affilié à aucune de ces plateformes.
+
+
+Cet inventaire est un document d'information et non un avis juridique.

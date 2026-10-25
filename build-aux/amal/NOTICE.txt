@@ -22,21 +22,19 @@ Code source
 Le code source complet et correspondant de chaque version d'Amal Studio est
 disponible à l'adresse : https://github.com/amal-studio/amal-studio
 
-Composants tiers principaux
----------------------------
-- OBS Studio / libobs : GPL v2 ou ultérieure
-- Qt 6 : LGPL v3
-- FFmpeg : LGPL v2.1 ou ultérieure (avec composants GPL)
-- x264 : GPL v2 ou ultérieure
-- Chromium Embedded Framework (source navigateur) : licence BSD
-- Police Amiri 1.003 (Khaled Hosny et le projet Amiri) : SIL Open Font License 1.1,
-  texte complet dans data/obs-plugins/amal-graphiques/fonts/Amiri-OFL.txt
-- Texte coranique Tanzil (Uthmani 1.0.2), (C) 2008-2010 Tanzil.net : Creative Commons
-  Attribution 3.0, copie conforme non modifiée - https://tanzil.net
-- Recueils de hadiths en arabe (Bukhari, Muslim, Abu Dawud, Tirmidhi, Nasa'i, Ibn Majah,
-  Malik) : projet hadith-api de fawazahmed0, domaine public (The Unlicense), fichiers non
-  modifiés - https://github.com/fawazahmed0/hadith-api
-Un inventaire détaillé des licences sera fourni avec la version 1.0.
+Composants tiers
+----------------
+L'inventaire complet des composants et de leurs licences figure dans le
+fichier LICENCES-TIERS.txt ; les textes des licences sont dans le dossier
+« licences ». Points principaux :
+- FFmpeg est fourni compilé avec x264 sous GPL version 3 : l'ensemble
+  distribué est donc régi par la GPL version 3.
+- Texte coranique Tanzil (Uthmani 1.0.2), (C) 2008-2010 Tanzil.net :
+  Creative Commons Attribution 3.0, copie conforme non modifiée -
+  https://tanzil.net
+- Recueils de hadiths : projet hadith-api (fawazahmed0), domaine public
+  (The Unlicense), non modifiés.
+- Polices Amiri : SIL Open Font License 1.1.
 
 Copyright (C) Lain Bailey et les contributeurs d'OBS Studio
 Copyright (C) 2026 Amal Ben Aly (modifications Amal Studio)
