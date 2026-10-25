@@ -19,6 +19,7 @@
 ******************************************************************************/
 
 #include "amal-assistant.hpp"
+#include "amal/amal-licence-client.hpp"
 
 #include <obs-frontend-api.h>
 #include <util/config-file.h>
@@ -196,6 +197,7 @@ void SetupAmalMenu()
 	menu->addAction(T("Menu.Mic"), main, [] { OpenMicAssistant(); });
 	menu->addSection(T("Menu.Help"));
 	menu->addAction(T("Menu.Guide"), main, [] { OpenGuide(); });
+	menu->addAction(T("Menu.Licence"), main, [] { amal::OpenLicence(); });
 
 	/* Avant le menu « Aide » (dernier menu) */
 	QMenuBar *bar = main->menuBar();

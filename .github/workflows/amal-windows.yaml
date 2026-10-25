@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  AMAL_VERSION: 0.15.0
+  AMAL_VERSION: 0.16.0
 
 jobs:
   windows-x64:
@@ -67,6 +67,7 @@ jobs:
                                'obs-plugins/64bit/amal-habillage.dll', 'data/obs-plugins/amal-habillage/locale/fr-FR.ini',
                                'obs-plugins/64bit/amal-multidiffusion.dll', 'data/obs-plugins/amal-multidiffusion/locale/fr-FR.ini',
                                'obs-plugins/64bit/amal-assistant.dll', 'data/obs-plugins/amal-assistant/locale/fr-FR.ini',
+                               'obs-plugins/64bit/amal-licence.dll', 'data/obs-plugins/amal-licence/locale/fr-FR.ini',
                                'data/obs-plugins/amal-bibliotheque/hadiths/ara-bukhari.min.json', 'data/obs-plugins/amal-bibliotheque/hadiths/ara-muslim.min.json',
                                'data/obs-plugins/amal-bibliotheque/hadiths/ara-abudawud.min.json', 'data/obs-plugins/amal-bibliotheque/hadiths/ara-tirmidhi.min.json',
                                'data/obs-plugins/amal-bibliotheque/hadiths/ara-nasai.min.json', 'data/obs-plugins/amal-bibliotheque/hadiths/ara-ibnmajah.min.json',
@@ -91,6 +92,7 @@ jobs:
           $Licences = Join-Path $Install 'licences'
           New-Item -ItemType Directory -Force -Path $Licences | Out-Null
           Copy-Item -Recurse -Force build-aux/amal/licences-tiers/obs-deps (Join-Path $Licences 'bibliotheques')
+          Copy-Item -Force build-aux/amal/licences-tiers/monocypher/LICENCE-Monocypher.md (Join-Path $Licences 'LICENCE-Monocypher.md')
           Copy-Item plugins/obs-filters/rnnoise/COPYING (Join-Path $Licences 'rnnoise-COPYING.txt')
           Copy-Item plugins/obs-outputs/librtmp/COPYING (Join-Path $Licences 'librtmp-COPYING.txt')
           Copy-Item plugins/obs-browser/COPYING (Join-Path $Licences 'obs-browser-COPYING.txt')

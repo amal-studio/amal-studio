@@ -936,6 +936,15 @@
 			stage.appendChild(card);
 			return;
 		}
+		/* Modèles Pro sans licence ni essai : filigrane bien visible */
+		var proTemplate = template === 'evenement' || template === 'intro' || (template === 'fond' && typeof d.fevt === 'string' && d.fevt !== '');
+		if (proTemplate && d.pro === false) {
+			var mark = el('div', 'filigrane-pro');
+			mark.appendChild(el('div', 'filigrane-titre', 'Amal Studio Pro'));
+			mark.appendChild(el('div', 'filigrane-texte', 'Essai terminé · Licence : menu Amal > Licence Amal Studio Pro'));
+			window.setTimeout(function () { stage.appendChild(mark); }, 0);
+		}
+
 		if (template === 'attente') {
 			stage.appendChild(card);
 			card.querySelectorAll('.attente-titre, .attente-sous-titre').forEach(function (n) { shrinkToWidth(n, 20); });

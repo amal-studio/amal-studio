@@ -10,6 +10,7 @@ add_library(OBS::amal-multidiffusion ALIAS amal-multidiffusion)
 target_sources(amal-multidiffusion PRIVATE amal-multidiffusion.cpp)
 
 target_link_libraries(amal-multidiffusion PRIVATE OBS::frontend-api OBS::libobs Qt::Widgets)
+target_include_directories(amal-multidiffusion PRIVATE "${CMAKE_SOURCE_DIR}/shared")
 
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in amal-multidiffusion.rc)

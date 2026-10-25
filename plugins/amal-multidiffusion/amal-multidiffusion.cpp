@@ -25,6 +25,8 @@
 #include <util/config-file.h>
 #include <util/platform.h>
 
+#include "amal/amal-licence-client.hpp"
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialog>
@@ -342,6 +344,10 @@ private:
 		Runtime *rt = runtimes[i].get();
 		if (rt->output && obs_output_active(rt->output)) {
 			return true;
+		}
+		if (!amal::ProActive()) {
+			status->setText(T("Error.ProRequired"));
+			return false;
 		}
 		OBSOutputAutoRelease main = obs_frontend_get_streaming_output();
 		if (!main || !obs_output_active(main)) {

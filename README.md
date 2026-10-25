@@ -11,6 +11,12 @@
 
 Amal Studio est basé sur [OBS Studio](https://obsproject.com). Il n'est ni affilié au projet OBS, ni approuvé par lui.
 
+## Essai et licence Pro
+
+Amal Studio s'installe gratuitement. Les fonctions de base restent gratuites pour toujours : diffusion et enregistrement, Coran, hadiths, programme du direct, habillages de base, assistants, caméra du téléphone. Les fonctions **Pro** (multidiffusion, cadres d'événement, fonds d'événements religieux, intros vidéo, relecture au ralenti et transitions Pro) sont disponibles pendant **30 jours d'essai**, puis avec une licence annuelle (25 000 FCFA, mises à jour comprises) : menu **Amal > Licence Amal Studio Pro**, contact WhatsApp +223 93 27 08 98.
+
+La licence Pro est un service de l'éditeur : le code source reste publié sous GPL (voir plus bas).
+
 ## Télécharger
 
 Les versions sont publiées dans la page [Releases](https://github.com/amal-studio/amal-studio/releases) : installateur (`Amal-Studio-…-Installer-x64.exe`) et version portable (`.zip`). Le guide d'utilisation en PDF est fourni avec chaque version (menu **Amal > Guide d'utilisation**).

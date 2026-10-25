@@ -42,6 +42,8 @@ obs-browser (source navigateur)   (OBS 32.2.2)    GPL v2 ou ultérieure
 obs-websocket                     (OBS 32.2.2)    GPL v2 ou ultérieure
 librtmp (dans obs-outputs)        -               LGPL v2.1
 RNNoise (réduction de bruit)      2020-07-28      BSD 3 clauses
+Monocypher (vérification des     4.0.3           BSD 2 clauses ou CC0 1.0
+  clés de licence Pro)                            (au choix)
 Qt                                6 (obs-deps)    LGPL v3 / GPL
 Chromium Embedded Framework       branche 6533    BSD 3 clauses (Chromium : BSD
   (CEF, rendu des habillages)                     et licences de ses composants)

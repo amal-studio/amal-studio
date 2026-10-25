@@ -10,6 +10,7 @@ add_library(OBS::amal-transitions ALIAS amal-transitions)
 target_sources(amal-transitions PRIVATE amal-transitions.cpp)
 
 target_link_libraries(amal-transitions PRIVATE OBS::frontend-api OBS::libobs Qt::Widgets)
+target_include_directories(amal-transitions PRIVATE "${CMAKE_SOURCE_DIR}/shared")
 
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in amal-transitions.rc)

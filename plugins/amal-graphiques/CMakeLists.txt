@@ -8,6 +8,7 @@ add_library(OBS::amal-graphiques ALIAS amal-graphiques)
 target_sources(amal-graphiques PRIVATE amal-graphiques.cpp)
 
 target_link_libraries(amal-graphiques PRIVATE OBS::libobs)
+target_include_directories(amal-graphiques PRIVATE "${CMAKE_SOURCE_DIR}/shared")
 
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in amal-graphiques.rc)

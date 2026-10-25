@@ -35,6 +35,7 @@ fichier LICENCES-TIERS.txt ; les textes des licences sont dans le dossier
 - Recueils de hadiths : projet hadith-api (fawazahmed0), domaine public
   (The Unlicense), non modifiés.
 - Polices Amiri : SIL Open Font License 1.1.
+- Monocypher 4.0.3 (vérification des clés de licence) : BSD 2 clauses ou CC0 1.0.
 
 Copyright (C) Lain Bailey et les contributeurs d'OBS Studio
 Copyright (C) 2026 Amal Ben Aly (modifications Amal Studio)

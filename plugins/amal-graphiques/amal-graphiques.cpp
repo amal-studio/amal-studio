@@ -22,6 +22,8 @@
 #include <util/dstr.h>
 #include <util/platform.h>
 
+#include "amal/amal-licence-client.hpp"
+
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -208,6 +210,8 @@ std::string BuildUrl(AmalGraphic *g, obs_data_t *settings)
 			obs_data_set_string(data, key, LocalFileUrl(file).c_str());
 		}
 	}
+	/* Licence : les modèles Pro portent un filigrane sans licence ni essai */
+	obs_data_set_bool(data, "pro", amal::ProActive());
 	/* Fond d'événement et intro */
 	obs_data_set_string(data, "fevt", obs_data_get_string(settings, "fond_evenement"));
 	obs_data_set_bool(data, "greet", obs_data_get_bool(settings, "salutation"));

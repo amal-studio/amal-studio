@@ -24,6 +24,8 @@
 #include <util/config-file.h>
 #include <util/platform.h>
 
+#include "amal/amal-licence-client.hpp"
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDockWidget>
@@ -137,7 +139,9 @@ void UpdateTransition(void *data, obs_data_t *settings)
 {
 	AmalTransition *tr = static_cast<AmalTransition *>(data);
 
-	tr->useVideo = strcmp(obs_data_get_string(settings, "mode"), "video") == 0;
+	/* Sans licence ni essai : vidéo et styles Pro remplacés par le volet */
+	const bool pro = amal::ProActive();
+	tr->useVideo = pro && strcmp(obs_data_get_string(settings, "mode"), "video") == 0;
 	tr->durationMs = (uint32_t)obs_data_get_int(settings, "duree");
 	tr->videoCutMs = obs_data_get_int(settings, "point_coupure");
 
@@ -151,7 +155,9 @@ void UpdateTransition(void *data, obs_data_t *settings)
 
 	OBSDataAutoRelease page = obs_data_create();
 	obs_data_set_string(page, "t", "transition");
-	obs_data_set_string(page, "style", obs_data_get_string(settings, "style"));
+	const char *style = obs_data_get_string(settings, "style");
+	const bool proStyle = strcmp(style, "eclats") == 0 || strcmp(style, "rubans") == 0 || strcmp(style, "losange") == 0;
+	obs_data_set_string(page, "style", proStyle && !pro ? "volet" : style);
 	obs_data_set_int(page, "dur", (long long)tr->durationMs);
 	obs_data_set_string(page, "fr", obs_data_get_string(settings, "texte"));
 	obs_data_set_string(page, "primary", ColorToHex(obs_data_get_int(settings, "couleur_principale")).c_str());
@@ -573,6 +579,11 @@ public:
 			return;
 		}
 		if (playing || pending) {
+			return;
+		}
+		if (!amal::ProActive()) {
+			status->setText(T("Error.ProRequired"));
+			amal::OpenLicence();
 			return;
 		}
 		pending = true;

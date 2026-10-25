@@ -10,6 +10,7 @@ add_library(OBS::amal-assistant ALIAS amal-assistant)
 target_sources(amal-assistant PRIVATE amal-assistant.cpp amal-assistant.hpp amal-micro.cpp amal-espace.cpp)
 
 target_link_libraries(amal-assistant PRIVATE OBS::frontend-api OBS::libobs Qt::Widgets)
+target_include_directories(amal-assistant PRIVATE "${CMAKE_SOURCE_DIR}/shared")
 
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in amal-assistant.rc)

@@ -1246,3 +1246,20 @@ html.look-epure .intro-titre { color: #FFFFFF; }
 .attente-compteur.long { font-size: 68px; }
 .attente-anneau.fini .attente-compteur { font-size: 36px; line-height: 1.25; padding: 0 56px; animation: pulse 1.4s ease-in-out infinite; }
 .attente-sous-titre { max-width: 100%; white-space: nowrap; overflow: hidden; font-size: 40px; font-weight: 600; color: #FFFFFF; opacity: 0.92; }
+
+/* Filigrane des modèles Pro sans licence */
+.filigrane-pro {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%) rotate(-12deg);
+	padding: 26px 60px;
+	background: rgba(0, 0, 0, 0.62);
+	border: 4px solid rgba(255, 255, 255, 0.85);
+	border-radius: 18px;
+	text-align: center;
+	z-index: 50;
+	pointer-events: none;
+}
+.filigrane-titre { font-size: 64px; font-weight: 900; color: #FFFFFF; letter-spacing: 0.04em; }
+.filigrane-texte { white-space: nowrap; font-size: 28px; font-weight: 600; color: #FFFFFF; margin-top: 8px; }
