@@ -629,6 +629,20 @@ private:
 		status->setText(T("Status.ThemeChosen"));
 	}
 
+public:
+	/* Appelé par l'assistant de démarrage : thème prêt n° « pack » et logo */
+	void applyPackFromAssistant(int pack, const QString &logo)
+	{
+		if (pack < 0 || pack >= PACK_COUNT) {
+			pack = 0;
+		}
+		Theme t = PackTheme(pack);
+		t.logo = logo;
+		setTheme(t);
+		applyToAll();
+	}
+
+private:
 	void pickColor(int i)
 	{
 		const QColor c = QColorDialog::getColor(colorsValue[i], this, T(i == 0   ? "Color.Primary"
@@ -1137,6 +1151,16 @@ private:
 
 /* ------------------------------------------------------------------------ */
 
+/* « void amal_theme_choisir(in int pack, in string logo) » (assistant de démarrage) */
+void ProcChooseTheme(void *, calldata_t *cd)
+{
+	const int pack = (int)calldata_int(cd, "pack");
+	const char *logo = calldata_string(cd, "logo");
+	if (dockWidget) {
+		dockWidget->applyPackFromAssistant(pack, QString::fromUtf8(logo ? logo : ""));
+	}
+}
+
 void SaveCallback(obs_data_t *saveData, bool saving, void *)
 {
 	if (!dockWidget) {
@@ -1240,6 +1264,8 @@ bool obs_module_load(void)
 	}
 	SetGlobalTheme(nullptr);
 	signal_handler_connect(obs_get_signal_handler(), "source_activate", IntroActivated, nullptr);
+	proc_handler_add(obs_get_proc_handler(), "void amal_theme_choisir(in int pack, in string logo)", ProcChooseTheme,
+			 nullptr);
 	obs_frontend_add_save_callback(SaveCallback, nullptr);
 	obs_frontend_add_event_callback(FrontendEvent, nullptr);
 	blog(LOG_INFO, "[amal-habillage] Studio graphique chargé");
